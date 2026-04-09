@@ -1,0 +1,12 @@
+# 小说项目配置
+title: ""                    # 书名
+genre: "玄幻"                # 类型
+target_words: 1000000        # 目标总字数
+volumes: 8                   # 预计总卷数
+words_per_volume: 125000     # 每卷目标字数
+chapters_per_volume: 25      # 每卷预计章数
+words_per_chapter:
+  min: 4000
+  max: 5000
+style: ""                    # 一句话风格定位
+status: "initializing"       # initializing | writing | paused | completed

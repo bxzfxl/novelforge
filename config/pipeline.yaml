@@ -1,0 +1,16 @@
+checkpoint:
+  interval: 10               # 每 N 章触发检查点
+  on_volume_end: true
+  on_high_deviation: true
+  warning_threshold: 5
+
+recovery:
+  chapter_retry: 2
+  chapter_fallback: simplify
+  lore_update_retry: 3
+  lore_update_fallback: skip_and_flag
+  critical_conflict: pause
+
+pacing:
+  low_threshold: 5            # 节奏评分低于此值触发调整
+  consecutive_low: 3          # 连续几章低分才调整

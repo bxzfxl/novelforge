@@ -1,0 +1,11 @@
+claude:
+  model: claude-sonnet-4-6
+  max_parallel: 2
+  rate_limit_rpm: 50
+  cooldown_on_429: 30
+
+gemini:
+  model: gemini-2.5-pro
+  max_parallel: 2
+  rate_limit_rpm: 30
+  cooldown_on_429: 30

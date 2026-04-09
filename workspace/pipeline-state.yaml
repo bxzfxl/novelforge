@@ -1,0 +1,18 @@
+project: ""
+current_volume: 0
+current_chapter: 0
+total_chapters_written: 0
+total_words: 0
+last_action: init
+last_action_status: success
+last_action_timestamp: null
+signals:
+  plot_deviation: low
+  consistency_warnings: 0
+  pacing_scores: []
+  foreshadow_debt: []
+  checkpoint_due: false
+  next_checkpoint: 10
+token_usage:
+  this_session: 0
+  total: 0
