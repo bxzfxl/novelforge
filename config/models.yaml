@@ -1,11 +1,35 @@
 claude:
-  model: claude-sonnet-4-6
-  max_parallel: 2
+  models:
+    - id: claude-sonnet-4-6
+      name: Claude Sonnet 4.6
+      tags: [主笔, 通用]
+      default: true
+    - id: claude-opus-4-6
+      name: Claude Opus 4.6
+      tags: [架构师, 决策]
+      default: false
+    - id: claude-haiku-4-5
+      name: Claude Haiku 4.5
+      tags: [快速, 辅助]
+      default: false
+  max_parallel: 3
   rate_limit_rpm: 50
   cooldown_on_429: 30
 
 gemini:
-  model: gemini-2.5-pro
-  max_parallel: 2
+  models:
+    - id: gemini-2.5-pro
+      name: Gemini 2.5 Pro
+      tags: [审查, 通用]
+      default: true
+    - id: gemini-2.5-flash
+      name: Gemini 2.5 Flash
+      tags: [快速, 辅助]
+      default: false
+    - id: gemini-2.0-flash
+      name: Gemini 2.0 Flash
+      tags: [快速]
+      default: false
+  max_parallel: 3
   rate_limit_rpm: 30
   cooldown_on_429: 30
