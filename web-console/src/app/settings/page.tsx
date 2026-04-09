@@ -2,8 +2,8 @@
 
 /**
  * 配置中心页面
- * 提供模型、管线、并发、Agent 连接四大分组的可视化配置界面
- * 模型配置支持多模型管理，每个厂商可添加多个模型条目
+ * 提供模型厂商、管线、Agent 连接三大分组的可视化配置界面
+ * 模型配置支持任意数量的厂商，每个厂商可独立管理模型列表
  */
 
 import { useEffect, useState } from 'react';
@@ -29,43 +29,92 @@ interface ConfigItem {
   updated_at: string;
 }
 
-/** 模型条目 */
+/** 单个模型条目 */
 interface ModelEntry {
-  id: string;          // 模型 ID，如 "claude-sonnet-4-6"
-  name: string;        // 显示名称，如 "Claude Sonnet 4.6"
-  provider: 'claude' | 'gemini';
-  tags: string[];      // 用途标签：["主笔", "通用"]
-  isDefault: boolean;  // 是否为该厂商的默认模型
+  id: string;           // 模型 ID，如 "gpt-4o"
+  name: string;         // 显示名称，如 "GPT-4o"
+  tags: string[];       // 用途标签，如 ["主笔", "通用"]
+  isDefault: boolean;   // 是否为该厂商的默认模型
 }
 
-/** 页面使用的表单值（key → 当前输入值） */
+/** 模型厂商 */
+interface ModelProvider {
+  id: string;             // 唯一标识，如 "openai"
+  name: string;           // 显示名称，如 "OpenAI"
+  apiBase: string;        // API Base URL（留空则用默认）
+  apiKeyConfigKey: string;// config 表中 API Key 的 key 名
+  cliCommand: string;     // CLI 命令，如 "claude"；留空则通过 API 调用
+  maxParallel: number;    // 最大并发数
+  models: ModelEntry[];   // 该厂商下的模型列表
+}
+
+/** 页面表单值（key → 当前输入值） */
 type FormValues = Record<string, string>;
 
 // ──────────────────────────────────────────────────────────
-// 预设模型列表（用于新安装时的默认值）
+// 预设厂商列表（首次加载时的默认值）
 // ──────────────────────────────────────────────────────────
 
-const DEFAULT_MODELS: ModelEntry[] = [
-  // Claude 预设
-  { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', provider: 'claude', tags: ['主笔', '通用'], isDefault: true },
-  { id: 'claude-opus-4-6',   name: 'Claude Opus 4.6',   provider: 'claude', tags: ['架构师', '决策'], isDefault: false },
-  { id: 'claude-haiku-4-5',  name: 'Claude Haiku 4.5',  provider: 'claude', tags: ['快速', '辅助'], isDefault: false },
-  // Gemini 预设
-  { id: 'gemini-2.5-pro',   name: 'Gemini 2.5 Pro',   provider: 'gemini', tags: ['审查', '通用'], isDefault: true },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'gemini', tags: ['快速', '辅助'], isDefault: false },
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'gemini', tags: ['快速'], isDefault: false },
+const DEFAULT_PROVIDERS: ModelProvider[] = [
+  {
+    id: 'claude',
+    name: 'Anthropic Claude',
+    apiBase: '',
+    apiKeyConfigKey: 'claude_api_key',
+    cliCommand: 'claude',
+    maxParallel: 3,
+    models: [
+      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', tags: ['主笔', '通用'],    isDefault: true  },
+      { id: 'claude-opus-4-6',   name: 'Claude Opus 4.6',   tags: ['架构师', '决策'],  isDefault: false },
+      { id: 'claude-haiku-4-5',  name: 'Claude Haiku 4.5',  tags: ['快速', '辅助'],    isDefault: false },
+    ],
+  },
+  {
+    id: 'gemini',
+    name: 'Google Gemini',
+    apiBase: '',
+    apiKeyConfigKey: 'gemini_api_key',
+    cliCommand: 'gemini',
+    maxParallel: 3,
+    models: [
+      { id: 'gemini-2.5-pro',   name: 'Gemini 2.5 Pro',   tags: ['审查', '通用'],   isDefault: true  },
+      { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', tags: ['快速', '辅助'],   isDefault: false },
+      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', tags: ['快速'],           isDefault: false },
+    ],
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    apiBase: 'https://api.openai.com/v1',
+    apiKeyConfigKey: 'openai_api_key',
+    cliCommand: '',
+    maxParallel: 5,
+    models: [
+      { id: 'gpt-4o',      name: 'GPT-4o',       tags: ['通用'],       isDefault: true  },
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini',  tags: ['快速', '辅助'], isDefault: false },
+      { id: 'o3-mini',     name: 'o3 Mini',       tags: ['推理'],       isDefault: false },
+    ],
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    apiBase: 'https://api.deepseek.com/v1',
+    apiKeyConfigKey: 'deepseek_api_key',
+    cliCommand: '',
+    maxParallel: 5,
+    models: [
+      { id: 'deepseek-chat',     name: 'DeepSeek Chat',     tags: ['通用'], isDefault: true  },
+      { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', tags: ['推理'], isDefault: false },
+    ],
+  },
 ];
 
-/** 非模型配置字段的默认值 */
+/** 管线/连接相关配置字段的默认值 */
 const DEFAULTS: FormValues = {
-  claude_api_key: '',
-  gemini_api_key: '',
   checkpoint_interval: '10',
   chapter_word_min: '3000',
   chapter_word_max: '5000',
   max_retry: '3',
-  max_claude_concurrent: '3',
-  max_gemini_concurrent: '5',
   agent_url: 'http://localhost:9100',
 };
 
@@ -114,20 +163,17 @@ function ModelRow({
   onToggleDefault,
 }: {
   entry: ModelEntry;
-  onChange: (field: keyof ModelEntry, value: string) => void;
+  onChange: (field: 'id' | 'name' | 'tags', value: string) => void;
   onDelete: () => void;
   onToggleDefault: () => void;
 }) {
-  // 标签输入：逗号分隔的字符串 ↔ string[]
-  const tagsStr = entry.tags.join(', ');
-
   return (
     <div className="flex items-center gap-2 rounded-md border border-stone-200 bg-stone-50/60 px-3 py-2">
       {/* 模型 ID */}
       <Input
         value={entry.id}
         onChange={(e) => onChange('id', e.target.value)}
-        placeholder="模型 ID，如 claude-sonnet-4-6"
+        placeholder="模型 ID，如 gpt-4o"
         className="h-8 flex-[2] text-xs font-mono"
       />
       {/* 显示名称 */}
@@ -139,7 +185,7 @@ function ModelRow({
       />
       {/* 标签（逗号分隔） */}
       <Input
-        value={tagsStr}
+        value={entry.tags.join(', ')}
         onChange={(e) => onChange('tags', e.target.value)}
         placeholder="标签，如 主笔, 通用"
         className="h-8 flex-[1] text-xs"
@@ -165,7 +211,7 @@ function ModelRow({
         />
         <span className="text-[10px] text-stone-400 whitespace-nowrap">默认</span>
       </div>
-      {/* 删除按钮 */}
+      {/* 删除模型按钮 */}
       <Button
         variant="ghost"
         size="sm"
@@ -179,72 +225,138 @@ function ModelRow({
 }
 
 // ──────────────────────────────────────────────────────────
-// 工具：某厂商的模型列表区块
+// 工具：单个厂商 Card
 // ──────────────────────────────────────────────────────────
 
-function ProviderModelList({
+function ProviderCard({
   provider,
-  label,
-  models,
-  onAdd,
-  onChange,
-  onDelete,
+  onProviderChange,
+  onDeleteProvider,
+  onAddModel,
+  onModelChange,
+  onModelDelete,
   onToggleDefault,
 }: {
-  provider: 'claude' | 'gemini';
-  label: string;
-  models: ModelEntry[];
-  onAdd: () => void;
-  onChange: (idx: number, field: keyof ModelEntry, value: string) => void;
-  onDelete: (idx: number) => void;
-  onToggleDefault: (idx: number) => void;
+  provider: ModelProvider;
+  onProviderChange: (field: keyof ModelProvider, value: string | number) => void;
+  onDeleteProvider: () => void;
+  onAddModel: () => void;
+  onModelChange: (modelIdx: number, field: 'id' | 'name' | 'tags', value: string) => void;
+  onModelDelete: (modelIdx: number) => void;
+  onToggleDefault: (modelIdx: number) => void;
 }) {
-  // 按 provider 过滤出全局索引，方便回调
   return (
-    <div className="rounded-lg border-2 border-dashed border-stone-200 p-4 space-y-3">
-      {/* 厂商标题 */}
+    <div className="rounded-lg border-2 border-dashed border-stone-200 p-4 space-y-4">
+      {/* 厂商头部：名称 + 删除按钮 */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-stone-700">{label}</span>
+        <Input
+          value={provider.name}
+          onChange={(e) => onProviderChange('name', e.target.value)}
+          placeholder="厂商名称，如 OpenAI"
+          className="h-8 max-w-[220px] text-sm font-semibold text-stone-800 border-transparent bg-transparent px-0 focus-visible:border-stone-300 focus-visible:bg-white focus-visible:px-3"
+        />
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          onClick={onAdd}
-          className="h-7 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-xs"
+          onClick={onDeleteProvider}
+          className="h-7 w-7 p-0 text-stone-400 hover:text-red-500 hover:bg-red-50"
+          title="删除该厂商"
         >
-          + 添加{label}模型
+          ×
         </Button>
       </div>
 
-      {/* 表头说明 */}
-      {models.length > 0 && (
-        <div className="grid grid-cols-[2fr_1.5fr_1fr_60px_64px_28px] gap-2 px-3 text-[10px] text-stone-400">
-          <span>模型 ID</span>
-          <span>显示名称</span>
-          <span>标签（逗号分隔）</span>
-          <span>预览</span>
-          <span>默认</span>
-          <span />
+      {/* 厂商信息：2 列 grid 布局 */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+        {/* API Key */}
+        <div className="space-y-1">
+          <Label className="text-xs text-stone-500">API Key</Label>
+          <Input
+            type="password"
+            value={provider.apiKeyConfigKey}
+            onChange={(e) => onProviderChange('apiKeyConfigKey', e.target.value)}
+            placeholder="API Key"
+            className="h-8 text-xs"
+            autoComplete="off"
+          />
         </div>
-      )}
+        {/* API Base URL */}
+        <div className="space-y-1">
+          <Label className="text-xs text-stone-500">API Base URL</Label>
+          <Input
+            value={provider.apiBase}
+            onChange={(e) => onProviderChange('apiBase', e.target.value)}
+            placeholder="留空使用默认"
+            className="h-8 text-xs font-mono"
+          />
+        </div>
+        {/* CLI 命令 */}
+        <div className="space-y-1">
+          <Label className="text-xs text-stone-500">CLI 命令</Label>
+          <Input
+            value={provider.cliCommand}
+            onChange={(e) => onProviderChange('cliCommand', e.target.value)}
+            placeholder="如 claude、gemini，留空则通过 API 调用"
+            className="h-8 text-xs font-mono"
+          />
+        </div>
+        {/* 最大并发数 */}
+        <div className="space-y-1">
+          <Label className="text-xs text-stone-500">最大并发数</Label>
+          <Input
+            type="number"
+            value={String(provider.maxParallel)}
+            onChange={(e) => onProviderChange('maxParallel', Number(e.target.value) || 1)}
+            min={1}
+            className="h-8 text-xs"
+          />
+        </div>
+      </div>
 
-      {/* 模型条目列表 */}
-      {models.length === 0 ? (
-        <p className="py-4 text-center text-xs text-stone-400">
-          暂无模型配置，点击上方按钮添加
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {models.map((entry, localIdx) => (
-            <ModelRow
-              key={`${provider}-${localIdx}`}
-              entry={entry}
-              onChange={(field, value) => onChange(localIdx, field, value)}
-              onDelete={() => onDelete(localIdx)}
-              onToggleDefault={() => onToggleDefault(localIdx)}
-            />
-          ))}
-        </div>
-      )}
+      <Separator className="bg-stone-100" />
+
+      {/* 模型列表 */}
+      <div className="space-y-3">
+        {/* 表头（有模型时才显示） */}
+        {provider.models.length > 0 && (
+          <div className="grid grid-cols-[2fr_1.5fr_1fr_60px_64px_28px] gap-2 px-3 text-[10px] text-stone-400">
+            <span>模型 ID</span>
+            <span>显示名称</span>
+            <span>标签（逗号分隔）</span>
+            <span>预览</span>
+            <span>默认</span>
+            <span />
+          </div>
+        )}
+
+        {provider.models.length === 0 ? (
+          <p className="py-2 text-center text-xs text-stone-400">
+            暂无模型，点击下方按钮添加
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {provider.models.map((model, idx) => (
+              <ModelRow
+                key={idx}
+                entry={model}
+                onChange={(field, value) => onModelChange(idx, field, value)}
+                onDelete={() => onModelDelete(idx)}
+                onToggleDefault={() => onToggleDefault(idx)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* 添加模型按钮 */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onAddModel}
+          className="h-7 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-xs"
+        >
+          + 添加模型
+        </Button>
+      </div>
     </div>
   );
 }
@@ -255,7 +367,7 @@ function ProviderModelList({
 
 export default function SettingsPage() {
   const [form, setForm] = useState<FormValues>(DEFAULTS);
-  const [models, setModels] = useState<ModelEntry[]>(DEFAULT_MODELS);
+  const [providers, setProviders] = useState<ModelProvider[]>(DEFAULT_PROVIDERS);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
 
@@ -274,22 +386,22 @@ export default function SettingsPage() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json() as { data: ConfigItem[] };
 
-        // 将数据库中的值合并到表单（保留 DEFAULTS 中未记录的默认值）
+        // 将数据库中的普通字段合并到表单
         const next: FormValues = { ...DEFAULTS };
         for (const item of json.data) {
-          if (item.key !== 'models_config') {
+          if (item.key !== 'providers_config') {
             next[item.key] = item.value;
           }
         }
         setForm(next);
 
-        // 单独解析 models_config 字段
-        const modelsItem = json.data.find((d) => d.key === 'models_config');
-        if (modelsItem?.value) {
+        // 单独解析 providers_config 字段
+        const providersItem = json.data.find((d) => d.key === 'providers_config');
+        if (providersItem?.value) {
           try {
-            const parsed = JSON.parse(modelsItem.value) as ModelEntry[];
+            const parsed = JSON.parse(providersItem.value) as ModelProvider[];
             if (Array.isArray(parsed) && parsed.length > 0) {
-              setModels(parsed);
+              setProviders(parsed);
             }
           } catch {
             // JSON 解析失败时保持预设值
@@ -306,10 +418,10 @@ export default function SettingsPage() {
   async function handleSave() {
     setSaving(true);
     try {
-      // 将 models 序列化为 JSON 字符串，随表单一起提交
+      // 将 providers 序列化为 JSON 字符串，随表单一起提交
       const payload: FormValues = {
         ...form,
-        models_config: JSON.stringify(models),
+        providers_config: JSON.stringify(providers),
       };
 
       const res = await fetch('/api/config', {
@@ -344,83 +456,115 @@ export default function SettingsPage() {
   }
 
   // ──────────────────────────────────────
-  // 模型列表操作辅助函数
+  // 厂商级操作
   // ──────────────────────────────────────
 
-  /** 按 provider 过滤并返回局部索引→全局索引的映射 */
-  function getProviderModels(provider: 'claude' | 'gemini') {
-    return models
-      .map((m, globalIdx) => ({ m, globalIdx }))
-      .filter(({ m }) => m.provider === provider);
+  /** 添加新厂商 */
+  function handleAddProvider() {
+    const newProvider: ModelProvider = {
+      id: `provider_${Date.now()}`,
+      name: '新厂商',
+      apiBase: '',
+      apiKeyConfigKey: '',
+      cliCommand: '',
+      maxParallel: 3,
+      models: [],
+    };
+    setProviders((prev) => [...prev, newProvider]);
   }
 
-  /** 添加新模型条目 */
-  function handleAdd(provider: 'claude' | 'gemini') {
-    setModels((prev) => [
-      ...prev,
-      { id: '', name: '', provider, tags: [], isDefault: false },
-    ]);
+  /** 删除厂商 */
+  function handleDeleteProvider(providerIdx: number) {
+    setProviders((prev) => prev.filter((_, i) => i !== providerIdx));
   }
 
-  /**
-   * 修改某 provider 下的第 localIdx 个条目的字段
-   * tags 字段传入逗号分隔字符串，自动拆分为数组
-   */
-  function handleChange(
-    provider: 'claude' | 'gemini',
-    localIdx: number,
-    field: keyof ModelEntry,
-    value: string,
+  /** 修改厂商字段 */
+  function handleProviderChange(
+    providerIdx: number,
+    field: keyof ModelProvider,
+    value: string | number,
   ) {
-    const providerModels = getProviderModels(provider);
-    const globalIdx = providerModels[localIdx]?.globalIdx;
-    if (globalIdx === undefined) return;
-
-    setModels((prev) => {
+    setProviders((prev) => {
       const next = [...prev];
-      if (field === 'tags') {
-        // 将逗号分隔字符串拆分为标签数组
-        next[globalIdx] = {
-          ...next[globalIdx],
-          tags: value.split(',').map((t) => t.trim()).filter(Boolean),
-        };
-      } else {
-        next[globalIdx] = { ...next[globalIdx], [field]: value };
-      }
+      next[providerIdx] = { ...next[providerIdx], [field]: value };
       return next;
     });
   }
 
-  /** 删除某 provider 下第 localIdx 个条目 */
-  function handleDelete(provider: 'claude' | 'gemini', localIdx: number) {
-    const providerModels = getProviderModels(provider);
-    const globalIdx = providerModels[localIdx]?.globalIdx;
-    if (globalIdx === undefined) return;
-    setModels((prev) => prev.filter((_, i) => i !== globalIdx));
+  // ──────────────────────────────────────
+  // 模型级操作
+  // ──────────────────────────────────────
+
+  /** 在指定厂商下添加新模型 */
+  function handleAddModel(providerIdx: number) {
+    setProviders((prev) => {
+      const next = [...prev];
+      next[providerIdx] = {
+        ...next[providerIdx],
+        models: [
+          ...next[providerIdx].models,
+          { id: '', name: '', tags: [], isDefault: false },
+        ],
+      };
+      return next;
+    });
   }
 
   /**
-   * 切换默认模型：同一 provider 内只允许一个 isDefault=true
-   * 若当前已是默认则取消，否则将同 provider 其他条目设为非默认
+   * 修改指定厂商下某个模型的字段
+   * tags 字段传入逗号分隔字符串，自动拆分为数组
    */
-  function handleToggleDefault(provider: 'claude' | 'gemini', localIdx: number) {
-    const providerModels = getProviderModels(provider);
-    const globalIdx = providerModels[localIdx]?.globalIdx;
-    if (globalIdx === undefined) return;
-
-    setModels((prev) => {
+  function handleModelChange(
+    providerIdx: number,
+    modelIdx: number,
+    field: 'id' | 'name' | 'tags',
+    value: string,
+  ) {
+    setProviders((prev) => {
       const next = [...prev];
-      const isCurrentlyDefault = next[globalIdx].isDefault;
-      // 先将同 provider 所有条目设为非默认
-      next.forEach((m, i) => {
-        if (m.provider === provider) {
-          next[i] = { ...m, isDefault: false };
-        }
-      });
-      // 若原来不是默认，则设为默认
-      if (!isCurrentlyDefault) {
-        next[globalIdx] = { ...next[globalIdx], isDefault: true };
+      const models = [...next[providerIdx].models];
+      if (field === 'tags') {
+        models[modelIdx] = {
+          ...models[modelIdx],
+          tags: value.split(',').map((t) => t.trim()).filter(Boolean),
+        };
+      } else {
+        models[modelIdx] = { ...models[modelIdx], [field]: value };
       }
+      next[providerIdx] = { ...next[providerIdx], models };
+      return next;
+    });
+  }
+
+  /** 删除指定厂商下某个模型 */
+  function handleModelDelete(providerIdx: number, modelIdx: number) {
+    setProviders((prev) => {
+      const next = [...prev];
+      next[providerIdx] = {
+        ...next[providerIdx],
+        models: next[providerIdx].models.filter((_, i) => i !== modelIdx),
+      };
+      return next;
+    });
+  }
+
+  /**
+   * 切换指定厂商下某个模型的默认状态
+   * 同厂商内只允许一个 isDefault=true
+   */
+  function handleToggleDefault(providerIdx: number, modelIdx: number) {
+    setProviders((prev) => {
+      const next = [...prev];
+      const models = next[providerIdx].models.map((m, i) => ({
+        ...m,
+        // 先清除同厂商所有默认，再按条件设定
+        isDefault: false,
+      }));
+      const wasDefault = next[providerIdx].models[modelIdx]?.isDefault ?? false;
+      if (!wasDefault) {
+        models[modelIdx] = { ...models[modelIdx], isDefault: true };
+      }
+      next[providerIdx] = { ...next[providerIdx], models };
       return next;
     });
   }
@@ -428,9 +572,6 @@ export default function SettingsPage() {
   // ──────────────────────────────────────
   // 渲染
   // ──────────────────────────────────────
-
-  const claudeModels = getProviderModels('claude').map(({ m }) => m);
-  const geminiModels = getProviderModels('gemini').map(({ m }) => m);
 
   return (
     <div className="space-y-6">
@@ -454,52 +595,33 @@ export default function SettingsPage() {
         <CardHeader className="px-6 pt-5 pb-3">
           <CardTitle className="text-base font-semibold text-stone-800">模型配置</CardTitle>
         </CardHeader>
-        <CardContent className="px-6 pb-5 space-y-5">
-          {/* API Key 区域 */}
-          <div className="space-y-4">
-            <FieldRow
-              id="claude_api_key"
-              label="Claude API Key"
-              type="password"
-              value={form.claude_api_key}
-              onChange={setField('claude_api_key')}
+        <CardContent className="px-6 pb-5 space-y-4">
+          {/* 各厂商 Card 列表 */}
+          {providers.map((provider, providerIdx) => (
+            <ProviderCard
+              key={provider.id}
+              provider={provider}
+              onProviderChange={(field, value) =>
+                handleProviderChange(providerIdx, field, value)
+              }
+              onDeleteProvider={() => handleDeleteProvider(providerIdx)}
+              onAddModel={() => handleAddModel(providerIdx)}
+              onModelChange={(modelIdx, field, value) =>
+                handleModelChange(providerIdx, modelIdx, field, value)
+              }
+              onModelDelete={(modelIdx) => handleModelDelete(providerIdx, modelIdx)}
+              onToggleDefault={(modelIdx) => handleToggleDefault(providerIdx, modelIdx)}
             />
-            <FieldRow
-              id="gemini_api_key"
-              label="Gemini API Key"
-              type="password"
-              value={form.gemini_api_key}
-              onChange={setField('gemini_api_key')}
-            />
-          </div>
+          ))}
 
-          <Separator className="bg-stone-100" />
-
-          {/* Claude 模型列表 */}
-          <ProviderModelList
-            provider="claude"
-            label="Claude"
-            models={claudeModels}
-            onAdd={() => handleAdd('claude')}
-            onChange={(localIdx, field, value) =>
-              handleChange('claude', localIdx, field, value)
-            }
-            onDelete={(localIdx) => handleDelete('claude', localIdx)}
-            onToggleDefault={(localIdx) => handleToggleDefault('claude', localIdx)}
-          />
-
-          {/* Gemini 模型列表 */}
-          <ProviderModelList
-            provider="gemini"
-            label="Gemini"
-            models={geminiModels}
-            onAdd={() => handleAdd('gemini')}
-            onChange={(localIdx, field, value) =>
-              handleChange('gemini', localIdx, field, value)
-            }
-            onDelete={(localIdx) => handleDelete('gemini', localIdx)}
-            onToggleDefault={(localIdx) => handleToggleDefault('gemini', localIdx)}
-          />
+          {/* 添加模型厂商按钮 */}
+          <Button
+            variant="outline"
+            onClick={handleAddProvider}
+            className="w-full h-10 border-dashed border-stone-300 text-stone-500 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50/50"
+          >
+            + 添加模型厂商
+          </Button>
         </CardContent>
       </Card>
 
@@ -540,30 +662,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* ── 3. 并发配置 ── */}
-      <Card className="border-stone-200 bg-white shadow-sm">
-        <CardHeader className="px-6 pt-5 pb-3">
-          <CardTitle className="text-base font-semibold text-stone-800">并发配置</CardTitle>
-        </CardHeader>
-        <CardContent className="px-6 pb-5 space-y-4">
-          <FieldRow
-            id="max_claude_concurrent"
-            label="Claude 最大并发数"
-            type="number"
-            value={form.max_claude_concurrent}
-            onChange={setField('max_claude_concurrent')}
-          />
-          <FieldRow
-            id="max_gemini_concurrent"
-            label="Gemini 最大并发数"
-            type="number"
-            value={form.max_gemini_concurrent}
-            onChange={setField('max_gemini_concurrent')}
-          />
-        </CardContent>
-      </Card>
-
-      {/* ── 4. Agent 连接 ── */}
+      {/* ── 3. Agent 连接 ── */}
       <Card className="border-stone-200 bg-white shadow-sm">
         <CardHeader className="px-6 pt-5 pb-3">
           <CardTitle className="text-base font-semibold text-stone-800">Agent 连接</CardTitle>

@@ -3,37 +3,37 @@ roles:
   architect:
     name: 故事架构师
     prompt_file: prompts/writers/architect.md
-    model: claude
+    model: claude-sonnet-4-6   # 直接引用模型 ID
     required: true             # 每章必参与
   main_writer:
     name: 主笔
     prompt_file: prompts/writers/main-writer.md
-    model: claude
+    model: claude-sonnet-4-6
     required: true
   character_advocate:
     name: 角色代言人
     prompt_file: prompts/writers/character-advocate.md
-    model: claude
+    model: claude-sonnet-4-6
     required: false            # 按需参与
   atmosphere:
     name: 氛围渲染师
     prompt_file: prompts/writers/atmosphere.md
-    model: claude
+    model: claude-sonnet-4-6
     required: false
   foreshadow_weaver:
     name: 伏笔编织者
     prompt_file: prompts/writers/foreshadow-weaver.md
-    model: claude
+    model: claude-sonnet-4-6
     required: false
   critic:
     name: 批评家
     prompt_file: prompts/review/critic.md
-    model: gemini
+    model: gemini-2.5-pro      # 直接引用模型 ID
     required: false
   continuity_checker:
     name: 连续性审查员
     prompt_file: prompts/review/continuity.md
-    model: gemini
+    model: gemini-2.5-pro
     required: false
 
 # 章节类型 → 编剧室配置

@@ -1,35 +1,76 @@
-claude:
-  models:
-    - id: claude-sonnet-4-6
-      name: Claude Sonnet 4.6
-      tags: [主笔, 通用]
-      default: true
-    - id: claude-opus-4-6
-      name: Claude Opus 4.6
-      tags: [架构师, 决策]
-      default: false
-    - id: claude-haiku-4-5
-      name: Claude Haiku 4.5
-      tags: [快速, 辅助]
-      default: false
-  max_parallel: 3
-  rate_limit_rpm: 50
-  cooldown_on_429: 30
+# 模型厂商与模型列表配置
+# 支持任意数量的厂商，每个厂商可配置多个模型
+# cli_command: 有则通过 CLI 调用；无则通过 api_base + API Key 调用
 
-gemini:
-  models:
-    - id: gemini-2.5-pro
-      name: Gemini 2.5 Pro
-      tags: [审查, 通用]
-      default: true
-    - id: gemini-2.5-flash
-      name: Gemini 2.5 Flash
-      tags: [快速, 辅助]
-      default: false
-    - id: gemini-2.0-flash
-      name: Gemini 2.0 Flash
-      tags: [快速]
-      default: false
-  max_parallel: 3
-  rate_limit_rpm: 30
-  cooldown_on_429: 30
+providers:
+  - id: claude
+    name: Anthropic Claude
+    cli_command: claude
+    max_parallel: 3
+    rate_limit_rpm: 50
+    cooldown_on_429: 30
+    models:
+      - id: claude-sonnet-4-6
+        name: Claude Sonnet 4.6
+        tags: [主笔, 通用]
+        default: true
+      - id: claude-opus-4-6
+        name: Claude Opus 4.6
+        tags: [架构师, 决策]
+        default: false
+      - id: claude-haiku-4-5
+        name: Claude Haiku 4.5
+        tags: [快速, 辅助]
+        default: false
+
+  - id: gemini
+    name: Google Gemini
+    cli_command: gemini
+    max_parallel: 3
+    rate_limit_rpm: 30
+    cooldown_on_429: 30
+    models:
+      - id: gemini-2.5-pro
+        name: Gemini 2.5 Pro
+        tags: [审查, 通用]
+        default: true
+      - id: gemini-2.5-flash
+        name: Gemini 2.5 Flash
+        tags: [快速, 辅助]
+        default: false
+      - id: gemini-2.0-flash
+        name: Gemini 2.0 Flash
+        tags: [快速]
+        default: false
+
+  - id: openai
+    name: OpenAI
+    api_base: https://api.openai.com/v1
+    max_parallel: 5
+    models:
+      - id: gpt-4o
+        name: GPT-4o
+        tags: [通用]
+        default: true
+      - id: gpt-4o-mini
+        name: GPT-4o Mini
+        tags: [快速, 辅助]
+        default: false
+      - id: o3-mini
+        name: o3 Mini
+        tags: [推理]
+        default: false
+
+  - id: deepseek
+    name: DeepSeek
+    api_base: https://api.deepseek.com/v1
+    max_parallel: 5
+    models:
+      - id: deepseek-chat
+        name: DeepSeek Chat
+        tags: [通用]
+        default: true
+      - id: deepseek-reasoner
+        name: DeepSeek Reasoner
+        tags: [推理]
+        default: false
