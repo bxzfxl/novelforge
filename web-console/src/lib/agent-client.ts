@@ -58,6 +58,18 @@ export type TerminalSize = {
   rows: number;
 };
 
+/** 终端输出事件 payload */
+export type TerminalOutputEvent = {
+  terminalId: string;
+  data: string;
+};
+
+/** 终端创建完成事件 payload */
+export type TerminalCreatedEvent = {
+  terminalId: string;
+  cliType: 'claude' | 'gemini';
+};
+
 // ──────────────────────────────────────────────
 // 事件名常量
 // ──────────────────────────────────────────────
@@ -77,6 +89,8 @@ const EV = {
   TERMINAL_INPUT: 'terminal:input',
   TERMINAL_RESIZE: 'terminal:resize',
   TERMINAL_KILL: 'terminal:kill',
+  TERMINAL_OUTPUT: 'terminal:output',
+  TERMINAL_CREATED: 'terminal:created',
 
   // 文件操作
   FILE_READ: 'file:read',
@@ -191,9 +205,26 @@ class AgentClient {
   /**
    * 创建交互式终端（PTY）
    * @param cliType 使用的 CLI 类型
+   * @returns Promise<string> 解析为服务端分配的 terminalId
    */
-  spawnTerminal(cliType: 'claude' | 'gemini'): void {
-    this._emit(EV.TERMINAL_SPAWN, { cliType });
+  spawnTerminal(cliType: 'claude' | 'gemini'): Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (!this.socket?.connected) {
+        reject(new Error('未连接到 Remote Agent'));
+        return;
+      }
+      // 服务端应通过 ack 回调返回 { terminalId }
+      this.socket.emit(EV.TERMINAL_SPAWN, { cliType }, (res: { terminalId?: string; error?: string }) => {
+        if (res?.error) {
+          reject(new Error(res.error));
+        } else if (res?.terminalId) {
+          resolve(res.terminalId);
+        } else {
+          // 若服务端不支持 ack，生成临时 ID 并监听 terminal:created 事件
+          reject(new Error('服务端未返回 terminalId'));
+        }
+      });
+    });
   }
 
   /** 向终端发送输入 */
@@ -301,6 +332,16 @@ class AgentClient {
     // 转发文件变更通知
     this.socket.on(EV.FILE_CHANGED, (data: FileChangedEvent) => {
       this._dispatch(EV.FILE_CHANGED, data);
+    });
+
+    // 转发终端输出
+    this.socket.on(EV.TERMINAL_OUTPUT, (data: TerminalOutputEvent) => {
+      this._dispatch(EV.TERMINAL_OUTPUT, data);
+    });
+
+    // 转发终端创建完成通知
+    this.socket.on(EV.TERMINAL_CREATED, (data: TerminalCreatedEvent) => {
+      this._dispatch(EV.TERMINAL_CREATED, data);
     });
   }
 
