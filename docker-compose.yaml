@@ -1,8 +1,9 @@
 services:
+  # Next.js Web 控制台
   web:
     build:
-      context: ./web-console
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: web-console/Dockerfile
     ports:
       - "3000:3000"
     environment:
@@ -10,8 +11,41 @@ services:
       - DB_PATH=/app/data/novelforge.db
     volumes:
       - web-data:/app/data
+    depends_on:
+      - agent
     restart: unless-stopped
     mem_limit: 512m
+    networks:
+      - novelforge
+
+  # Remote Agent — CLI 进程管理服务
+  agent:
+    build:
+      context: ./remote-agent
+      dockerfile: Dockerfile
+    ports:
+      - "9100:9100"
+    environment:
+      - AGENT_PORT=9100
+      - PROJECT_ROOT=/project
+      - CLAUDE_PATH=${CLAUDE_PATH:-claude}
+      - GEMINI_PATH=${GEMINI_PATH:-gemini}
+      - MAX_CONCURRENT_CLAUDE=${MAX_CLAUDE:-2}
+      - MAX_CONCURRENT_GEMINI=${MAX_GEMINI:-2}
+    volumes:
+      # 挂载项目目录，供 Agent 读写小说文件
+      - ${PROJECT_ROOT:-.}:/project
+      # 挂载宿主机 CLI 工具（按需取消注释）
+      # - /usr/local/bin/claude:/usr/local/bin/claude:ro
+      # - /usr/local/bin/gemini:/usr/local/bin/gemini:ro
+    restart: unless-stopped
+    mem_limit: 1g
+    networks:
+      - novelforge
+
+networks:
+  novelforge:
+    driver: bridge
 
 volumes:
   web-data:
