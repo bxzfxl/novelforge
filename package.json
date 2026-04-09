@@ -1,0 +1,10 @@
+{
+  "name": "novelforge",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter web-console dev",
+    "dev:agent": "pnpm --filter remote-agent dev",
+    "build": "pnpm --filter web-console build",
+    "build:agent": "pnpm --filter remote-agent build"
+  }
+}
