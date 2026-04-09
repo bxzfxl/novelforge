@@ -1,0 +1,17 @@
+services:
+  web:
+    build:
+      context: ./web-console
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_AGENT_URL=http://${HOST_IP:-localhost}:9100
+      - DB_PATH=/app/data/novelforge.db
+    volumes:
+      - web-data:/app/data
+    restart: unless-stopped
+    mem_limit: 512m
+
+volumes:
+  web-data:
