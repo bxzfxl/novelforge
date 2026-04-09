@@ -17,8 +17,11 @@ RUN pnpm install --frozen-lockfile || pnpm install
 # ── builder 层：构建 Next.js ───────────────────────────────────────────────────
 FROM base AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
+# 拷贝 monorepo 根级 node_modules（next 等包安装在此处）
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/web-console/node_modules ./web-console/node_modules
+# 拷贝 monorepo 根级 package.json（Turbopack 需要识别 workspace root）
+COPY package.json pnpm-workspace.yaml ./
 COPY web-console ./web-console
 WORKDIR /app/web-console
 RUN pnpm build

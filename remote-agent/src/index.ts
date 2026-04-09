@@ -6,6 +6,7 @@
 
 import { createServer } from 'node:http';
 import { readFile, writeFile, readdir, stat, mkdir } from 'node:fs/promises';
+import { statSync } from 'node:fs';
 import { spawn, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
 import { Server } from 'socket.io';
@@ -119,9 +120,27 @@ function createTerminalSession(
   const sessionId = nanoid(12);
   const cliPath = cliType === 'claude' ? agentConfig.claudePath : agentConfig.geminiPath;
 
+  // Windows 上 Claude CLI 需要 git-bash 路径，自动检测常见安装位置
+  const childEnv = { ...process.env } as Record<string, string>;
+  if (process.platform === 'win32' && !childEnv.CLAUDE_CODE_GIT_BASH_PATH) {
+    const candidates = [
+      'C:\\Program Files\\Git\\bin\\bash.exe',
+      'D:\\Program Files\\Git\\bin\\bash.exe',
+      'D:\\softwares\\Git\\bin\\bash.exe',
+      'C:\\Git\\bin\\bash.exe',
+    ];
+    for (const p of candidates) {
+      try {
+        statSync(p);
+        childEnv.CLAUDE_CODE_GIT_BASH_PATH = p;
+        break;
+      } catch { /* 路径不存在，跳过 */ }
+    }
+  }
+
   const child = spawn(cliPath, [], {
     cwd: PROJECT_ROOT,
-    env: { ...process.env } as Record<string, string>,
+    env: childEnv,
     stdio: ['pipe', 'pipe', 'pipe'],
     shell: process.platform === 'win32',
   });
@@ -129,28 +148,28 @@ function createTerminalSession(
   const session: TerminalSession = { sessionId, cliType, child, socketId };
   terminalSessions.set(sessionId, session);
 
-  // 将 stdout / stderr 实时转发给发起方 socket
+  // 将 stdout / stderr 实时转发给发起方 socket（使用 terminal:output 事件）
   child.stdout?.setEncoding('utf8');
   child.stdout?.on('data', (chunk: string) => {
-    io.to(socketId).emit('process:output', { processId: sessionId, data: chunk });
+    io.to(socketId).emit('terminal:output', { terminalId: sessionId, data: chunk });
   });
 
   child.stderr?.setEncoding('utf8');
   child.stderr?.on('data', (chunk: string) => {
-    io.to(socketId).emit('process:output', { processId: sessionId, data: chunk });
+    io.to(socketId).emit('terminal:output', { terminalId: sessionId, data: chunk });
   });
 
   child.on('close', () => {
     terminalSessions.delete(sessionId);
-    io.to(socketId).emit('process:output', {
-      processId: sessionId,
+    io.to(socketId).emit('terminal:output', {
+      terminalId: sessionId,
       data: '\r\n[会话已结束]\r\n',
     });
   });
 
   child.on('error', (err) => {
-    io.to(socketId).emit('process:output', {
-      processId: sessionId,
+    io.to(socketId).emit('terminal:output', {
+      terminalId: sessionId,
       data: `\r\n[终端错误] ${err.message}\r\n`,
     });
     terminalSessions.delete(sessionId);
@@ -189,20 +208,22 @@ io.on('connection', (socket) => {
     }
   });
 
-  /** 终止进程 */
-  socket.on('process:kill', (processId, callback) => {
+  /** 终止进程 — 客户端发送 { processId } 对象 */
+  socket.on('process:kill', (data, callback) => {
+    const processId = typeof data === 'string' ? data : data.processId;
     const ok = processManager.kill(processId);
     console.log(`[进程] kill ${processId}: ${ok ? '成功' : '未找到或已结束'}`);
     callback({ ok });
   });
 
-  /** 列出所有进程 */
-  socket.on('process:list', (callback) => {
+  /** 列出所有进程 — 客户端发送 ({}, callback) */
+  socket.on('process:list', (_data, callback) => {
     callback(processManager.listAll());
   });
 
-  /** 订阅进程输出 */
-  socket.on('process:subscribe', (processId) => {
+  /** 订阅进程输出 — 客户端发送 { processId } 对象 */
+  socket.on('process:subscribe', (data) => {
+    const processId = typeof data === 'string' ? data : data.processId;
     const history = processManager.subscribe(processId, socket.id);
     // 补播历史缓冲区
     for (const chunk of history) {
@@ -210,19 +231,22 @@ io.on('connection', (socket) => {
     }
   });
 
-  /** 取消订阅进程输出 */
-  socket.on('process:unsubscribe', (processId) => {
+  /** 取消订阅进程输出 — 客户端发送 { processId } 对象 */
+  socket.on('process:unsubscribe', (data) => {
+    const processId = typeof data === 'string' ? data : data.processId;
     processManager.unsubscribe(processId, socket.id);
   });
 
   // ── 交互式终端 ───────────────────────────────────────────
 
-  /** 启动交互式终端会话 */
-  socket.on('terminal:spawn', (cliType, callback) => {
+  /** 启动交互式终端会话 — 客户端发送 { cliType }, callback */
+  socket.on('terminal:spawn', (data, callback) => {
     try {
+      const cliType = typeof data === 'string' ? data : data.cliType;
       const sessionId = createTerminalSession(cliType, socket.id);
       console.log(`[终端] 已启动 ${cliType} 会话: ${sessionId}`);
-      callback({ ok: true, sessionId });
+      // 返回 terminalId（客户端期望的字段名）
+      callback({ ok: true, terminalId: sessionId });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[终端] 启动失败: ${msg}`);
@@ -230,25 +254,30 @@ io.on('connection', (socket) => {
     }
   });
 
-  /** 向终端写入输入 */
-  socket.on('terminal:input', ({ sessionId, data }) => {
+  /** 向终端写入输入 — 客户端发送 { terminalId, data } */
+  socket.on('terminal:input', (payload) => {
+    // 兼容 terminalId 和 sessionId 两种字段名
+    const sessionId = (payload as Record<string, string>).terminalId
+      ?? (payload as Record<string, string>).sessionId;
     const session = terminalSessions.get(sessionId);
     if (session && session.socketId === socket.id) {
-      session.child.stdin?.write(data);
+      session.child.stdin?.write(payload.data);
     }
   });
 
   /**
-   * 终端调整大小（child_process 无 PTY，此处仅记录日志；
-   * 切换到 node-pty 后可调用 pty.resize）
+   * 终端调整大小 — 客户端发送 { terminalId, cols, rows }
+   * child_process 无 PTY，此处仅记录日志；切换到 node-pty 后可调用 pty.resize
    */
-  socket.on('terminal:resize', ({ sessionId, cols, rows }) => {
-    // 非 PTY 模式下无法真正 resize，仅记录
-    console.log(`[终端] resize 请求 ${sessionId}: ${cols}x${rows}（非 PTY，忽略）`);
+  socket.on('terminal:resize', (payload) => {
+    const p = payload as { terminalId?: string; sessionId?: string; cols: number; rows: number };
+    const sessionId = p.terminalId ?? p.sessionId ?? '';
+    console.log(`[终端] resize 请求 ${sessionId}: ${p.cols}x${p.rows}（非 PTY，忽略）`);
   });
 
-  /** 终止终端会话 */
-  socket.on('terminal:kill', (sessionId) => {
+  /** 终止终端会话 — 客户端发送 { terminalId } 对象 */
+  socket.on('terminal:kill', (data) => {
+    const sessionId = typeof data === 'string' ? data : (data as Record<string, string>).terminalId;
     const session = terminalSessions.get(sessionId);
     if (session && session.socketId === socket.id) {
       session.child.kill();
@@ -259,9 +288,10 @@ io.on('connection', (socket) => {
 
   // ── 文件操作 ─────────────────────────────────────────────
 
-  /** 读取文件 */
-  socket.on('file:read', async (filePath, callback) => {
+  /** 读取文件 — 客户端发送 { path }, callback */
+  socket.on('file:read', async (data, callback) => {
     try {
+      const filePath = typeof data === 'string' ? data : data.path;
       const safePath = resolveSafe(filePath);
       const content = await readFile(safePath, 'utf8');
       callback({ ok: true, content });
@@ -271,7 +301,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  /** 写入文件（自动创建父目录） */
+  /** 写入文件（自动创建父目录）— 客户端发送 { path, content }, callback */
   socket.on('file:write', async ({ path: filePath, content }, callback) => {
     try {
       const safePath = resolveSafe(filePath);
@@ -284,9 +314,10 @@ io.on('connection', (socket) => {
     }
   });
 
-  /** 列出目录内容 */
-  socket.on('file:list', async (dirPath, callback) => {
+  /** 列出目录内容 — 客户端发送 { path }, callback */
+  socket.on('file:list', async (data, callback) => {
     try {
+      const dirPath = typeof data === 'string' ? data : data.path;
       const safePath = resolveSafe(dirPath);
       const entries = await readdir(safePath, { withFileTypes: true });
 

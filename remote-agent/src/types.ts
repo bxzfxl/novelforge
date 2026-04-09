@@ -32,34 +32,47 @@ export interface AgentConfig {
   maxConcurrent: { claude: number; gemini: number };
 }
 
+/**
+ * 服务端 → 客户端事件
+ * 注意：terminal:output 用于终端输出，process:output 用于管线进程输出
+ */
 export interface ServerToClientEvents {
   'process:output': (data: { processId: string; data: string }) => void;
   'process:status': (data: ProcessInfo) => void;
   'file:changed': (data: { path: string; type: 'created' | 'modified' | 'deleted' }) => void;
   'agent:status': (data: { connected: boolean; activeProcesses: number }) => void;
+  'terminal:output': (data: { terminalId: string; data: string }) => void;
+  'terminal:created': (data: { terminalId: string; cliType: 'claude' | 'gemini' }) => void;
 }
 
+/**
+ * 客户端 → 服务端事件
+ * 与 web-console/src/lib/agent-client.ts 的实际发送格式对齐
+ */
 export interface ClientToServerEvents {
   'process:spawn': (
     config: SpawnConfig,
     callback: (result: { ok: boolean; processId?: string; error?: string }) => void
   ) => void;
   'process:kill': (
-    processId: string,
+    data: { processId: string },
     callback: (result: { ok: boolean }) => void
   ) => void;
-  'process:list': (callback: (processes: ProcessInfo[]) => void) => void;
-  'process:subscribe': (processId: string) => void;
-  'process:unsubscribe': (processId: string) => void;
-  'terminal:spawn': (
-    cliType: 'claude' | 'gemini',
-    callback: (result: { ok: boolean; sessionId?: string; error?: string }) => void
+  'process:list': (
+    data: Record<string, never>,
+    callback: (processes: ProcessInfo[]) => void
   ) => void;
-  'terminal:input': (data: { sessionId: string; data: string }) => void;
-  'terminal:resize': (data: { sessionId: string; cols: number; rows: number }) => void;
-  'terminal:kill': (sessionId: string) => void;
+  'process:subscribe': (data: { processId: string }) => void;
+  'process:unsubscribe': (data: { processId: string }) => void;
+  'terminal:spawn': (
+    data: { cliType: 'claude' | 'gemini' },
+    callback: (result: { ok: boolean; terminalId?: string; error?: string }) => void
+  ) => void;
+  'terminal:input': (data: { terminalId: string; data: string }) => void;
+  'terminal:resize': (data: { terminalId: string; cols: number; rows: number }) => void;
+  'terminal:kill': (data: { terminalId: string }) => void;
   'file:read': (
-    filePath: string,
+    data: { path: string },
     callback: (result: { ok: boolean; content?: string; error?: string }) => void
   ) => void;
   'file:write': (
@@ -67,7 +80,7 @@ export interface ClientToServerEvents {
     callback: (result: { ok: boolean; error?: string }) => void
   ) => void;
   'file:list': (
-    dirPath: string,
+    data: { path: string },
     callback: (
       result: {
         ok: boolean;
