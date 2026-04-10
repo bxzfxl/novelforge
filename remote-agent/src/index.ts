@@ -389,6 +389,12 @@ httpServer.listen(PORT, () => {
   console.log(`  Claude 路径: ${agentConfig.claudePath}`);
   console.log(`  Gemini 路径: ${agentConfig.geminiPath}`);
   console.log(`  最大并发   : claude=${agentConfig.maxConcurrent.claude} gemini=${agentConfig.maxConcurrent.gemini}`);
+
+  // 触发 target 可用性检测（fire-and-forget，Web 控制台可能尚未就绪）
+  const webUrl = process.env.WEB_URL ?? 'http://localhost:3000';
+  fetch(`${webUrl}/api/targets/detect`, { method: 'POST' })
+    .then(() => console.log('[启动] 已触发 target 可用性检测'))
+    .catch((err: Error) => console.warn('[启动] 可用性检测失败（Web 尚未就绪）:', err.message));
 });
 
 // 优雅退出：终止所有活跃进程

@@ -8,6 +8,12 @@
     "dev": "pnpm --filter web-console dev",
     "dev:agent": "pnpm --filter remote-agent dev",
     "build": "pnpm --filter web-console build",
-    "build:agent": "pnpm --filter remote-agent build"
+    "build:agent": "pnpm --filter remote-agent build",
+    "migrate:operations": "tsx scripts/migrate-to-operations.ts"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.0",
+    "tsx": "^4.21.0",
+    "@types/js-yaml": "^4.0.9"
   }
 }
