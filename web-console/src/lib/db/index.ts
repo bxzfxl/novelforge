@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { SCHEMA } from './schema';
 import { seedModelTargets } from './seed-model-targets';
+import { seedOperations } from './seed-operations';
 
 const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), 'data', 'novelforge.db');
 
@@ -44,6 +45,7 @@ export function getDb(): Database.Database {
     db.exec(SCHEMA);
     runMigration002(db);
     seedModelTargets(db);
+    seedOperations(db);
   }
   return db;
 }
