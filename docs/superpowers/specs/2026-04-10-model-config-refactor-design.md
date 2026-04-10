@@ -189,26 +189,56 @@ ALTER TABLE token_usage ADD COLUMN was_cli_mode INTEGER NOT NULL DEFAULT 0;
 
 启动时如果表为空，自动 seed：
 
-**model_targets**（~15 条）：
-- Anthropic: `claude-opus-4-6:api`, `claude-opus-4-6:cli`, `claude-sonnet-4-6:api`, `claude-sonnet-4-6:cli`, `claude-haiku-4-5:api`, `claude-haiku-4-5:cli`
-- OpenAI: `gpt-5.4:api`, `gpt-5.2:api`
-- Google: `gemini-3.1-pro:api`, `gemini-3.1-pro:cli`, `gemini-2.5-flash:api`, `gemini-2.5-flash:cli`
-- DeepSeek: `deepseek-v3.2:api`, `deepseek-reasoner:api`
-- xAI: `grok-4.20:api`
+**model_targets**（~30 条，跨 8 个 provider）。
 
-每条记录预填价格（基于 2026-04 最新定价）。**定价刷新机制**：Settings → 凭证管理 Tab 顶部提供"刷新定价"按钮，触发从代码内置的定价常量表重新写入 `model_targets` 的价格字段；未来可扩展为从远端拉取官方定价 JSON。手动修改某一条后标记为 `price_manually_edited=1`（`model_targets` 新增此字段），不被刷新覆盖。当前 MVP 只做内置常量 + 手动刷新，不加自动同步。
+**定价来源**：[LLM-Price 仓库](https://github.com/syaoranwe/LLM-Price) + 各 provider 官方文档（2026-04）。CNY 价格按 ¥7/USD 换算。
 
+**定价刷新机制**：Settings → 凭证管理 Tab 顶部提供"刷新定价"按钮，触发从代码内置的定价常量表重新写入 `model_targets` 的价格字段；未来可扩展为从远端拉取官方定价 JSON。手动修改某一条后标记为 `price_manually_edited=1`，不被刷新覆盖。
 
+#### 西方 Provider
 
-| 模型 | Input | Output | Cache Read |
-|------|-------|--------|-----------|
-| Claude Opus 4.6 | $5/M | $25/M | $0.50/M |
-| Claude Sonnet 4.6 | $3/M | $15/M | $0.30/M |
-| Claude Haiku 4.5 | $1/M | $5/M | $0.10/M |
-| Gemini 3.1 Pro | $1.25/M | $10/M | — |
-| Gemini 2.5 Flash | $0.30/M | $2.50/M | — |
-| GPT-5.4 | $2.50/M | $15/M | — |
-| DeepSeek V3.2 | $0.28/M | $0.42/M | $0.028/M |
+| 模型 | Target ID | Input (USD/M) | Output (USD/M) | Cache Read | Tier |
+|------|-----------|---------------|----------------|-----------|------|
+| Claude Opus 4.6 | `claude-opus-4-6:api` | $5.00 | $25.00 | $0.50 | flagship |
+| Claude Sonnet 4.6 | `claude-sonnet-4-6:api` | $3.00 | $15.00 | $0.30 | mid |
+| Claude Haiku 4.5 | `claude-haiku-4-5:api` | $1.00 | $5.00 | $0.10 | efficient |
+| GPT-5.4 | `gpt-5.4:api` | $2.50 | $15.00 | $0.25 | flagship |
+| GPT-5.4 Mini | `gpt-5.4-mini:api` | $0.75 | $4.50 | $0.075 | mid |
+| GPT-5 Mini | `gpt-5-mini:api` | $0.25 | $2.00 | $0.025 | efficient |
+| GPT-5 Nano | `gpt-5-nano:api` | $0.05 | $0.40 | $0.005 | efficient |
+| Gemini 3.1 Pro Preview | `gemini-3.1-pro:api` | $2.00 | $12.00 | $0.20 | flagship |
+| Gemini 2.5 Pro | `gemini-2.5-pro:api` | $1.25 | $10.00 | $0.125 | mid |
+| Gemini 2.5 Flash | `gemini-2.5-flash:api` | $0.30 | $2.50 | $0.03 | efficient |
+| Gemini 2.5 Flash-Lite | `gemini-2.5-flash-lite:api` | $0.10 | $0.40 | $0.01 | efficient |
+| DeepSeek V3.2 | `deepseek-chat:api` | $0.28 | $0.42 | $0.028 | efficient |
+| DeepSeek Reasoner (R1) | `deepseek-reasoner:api` | $0.28 | $0.42 | $0.028 | reasoning |
+
+#### 中文 Provider（中文文学写作优化）
+
+| 模型 | Target ID | Input (USD/M) | Output (USD/M) | Notes |
+|------|-----------|---------------|----------------|-------|
+| Zhipu GLM-5 | `glm-5:api` | $0.57 | $2.57 | 清华系，中文文学表达强 |
+| Alibaba Qwen3-Max | `qwen3-max:api` | $0.36 | $1.43 | 阿里旗舰 |
+| Alibaba Qwen3.5-Plus | `qwen3.5-plus:api` | $0.11 | $0.69 | 性价比均衡 |
+| Alibaba Qwen3.5-Flash | `qwen3.5-flash:api` | $0.029 | $0.286 | **Qwen 系列最便宜** |
+| Moonshot Kimi-K2.5 | `kimi-k2.5:api` | $0.57 | $3.00 | 长上下文强项 |
+
+> ⚠️ **中文 Provider 注意事项**：
+> - 多数有输出内容审查，**玄幻/科幻/成人向**题材需评估是否合规
+> - 默认不启用，用户在凭证管理页手动填 Key 后激活
+> - 预设 "中文优化" 才会使用这些 target
+
+#### CLI 模式 Target
+
+| 模型 | Target ID | 触发方式 |
+|------|-----------|---------|
+| Claude Opus 4.6 (CLI) | `claude-opus-4-6:cli` | 本机 `claude` CLI + Max 订阅 |
+| Claude Sonnet 4.6 (CLI) | `claude-sonnet-4-6:cli` | 同上 |
+| Claude Haiku 4.5 (CLI) | `claude-haiku-4-5:cli` | 同上 |
+| Gemini 3.1 Pro (CLI) | `gemini-3.1-pro:cli` | 本机 `gemini` CLI + 订阅 |
+| Gemini 2.5 Flash (CLI) | `gemini-2.5-flash:cli` | 同上 |
+
+> CLI 模式下定价字段为 NULL，成本计 0，仍记录 token 数用于"CLI 节省"统计。
 
 **ai_operations**：19 条（见 § 3.2）
 
@@ -276,9 +306,13 @@ export interface ProviderAdapter {
 | `OpenAIAPIAdapter` | `fetch` `api.openai.com/v1/chat/completions` | 响应 `usage` | — |
 | `DeepSeekAPIAdapter` | `fetch` `api.deepseek.com/chat/completions` | 响应 `usage` | OpenAI 兼容协议 |
 | `GeminiAPIAdapter` | `fetch` `generativelanguage.googleapis.com/v1beta/...` | 响应 `usageMetadata` | — |
-| `XaiAPIAdapter` | `fetch` `api.x.ai/v1/chat/completions` | 响应 `usage` | OpenAI 兼容 |
+| `QwenAPIAdapter` | `fetch` `dashscope.aliyuncs.com/compatible-mode/v1/chat/completions` | 响应 `usage` | OpenAI 兼容协议 |
+| `ZhipuAPIAdapter` | `fetch` `open.bigmodel.cn/api/paas/v4/chat/completions` | 响应 `usage` | OpenAI 兼容 |
+| `MoonshotAPIAdapter` | `fetch` `api.moonshot.cn/v1/chat/completions` | 响应 `usage` | OpenAI 兼容 |
 | `ClaudeCLIAdapter` | Agent `process:spawn` + `claude -p "..." --output-format stream-json` | 解析 stream-json 的 `usage` | 成本 0 |
 | `GeminiCLIAdapter` | Agent `process:spawn` + `gemini -p "..."` | 解析输出（待验证格式） | 成本 0 |
+
+> **注意**：Qwen/Zhipu/Moonshot 均提供 OpenAI 兼容协议，可以复用 `OpenAIAPIAdapter` 的基础逻辑，仅改变 baseURL。实现上可以是同一个类配不同的 `baseURL` 配置，而不是 3 个独立类。
 
 ### 5.3 工厂与注册
 
@@ -534,17 +568,48 @@ export async function resumeSnapshot(id: string): Promise<ExecuteResult> {
 
 ### 7.2 预设菜单（`⚡ 应用预设`）
 
-点击右上角按钮弹出 Modal，展示 5 个预设卡片：
+点击右上角按钮弹出 Modal，展示 **6 个预设卡片**：
 
-| 预设 | 渠道数 | 预估 100 章成本 | 前置条件 |
-|------|--------|---------------|----------|
-| 🎯 平衡（API） | 2 | ~$38 | Anthropic + DeepSeek API Key |
-| 💰 极致性价比 | 1 | ~$3 | DeepSeek API Key |
-| 🏆 榜首性能 | 3 | ~$25 | Anthropic + Google + DeepSeek API Key |
-| 🎟 纯订阅党 | 1 | $0 边际 | Claude Max 订阅 + 本机 claude CLI |
-| 🔀 订阅+API 混合 | 2 | ~$3 | Claude 订阅 + DeepSeek API Key |
+| 预设 | 渠道数 | 预估 100 章成本 | 适合 | 前置条件 |
+|------|--------|---------------|------|----------|
+| 🎯 **平衡（API）** | 2 | ~$38 | 国际题材/中英混合 | Anthropic + DeepSeek API Key |
+| 📖 **中文优化** | 2 | ~$15 | 中文网文（非敏感题材） | Anthropic + Alibaba Qwen Key |
+| 💰 **极致性价比** | 1 | ~$3 | 预算紧 / 量产 | DeepSeek API Key |
+| 🏆 **榜首性能** | 3 | ~$45 | 质量至上 | Anthropic + Google + DeepSeek API Key |
+| 🎟 **纯订阅党** | 1 | $0 边际 | 有 Claude Max 订阅 | Claude Max + 本机 claude CLI |
+| 🔀 **订阅+API 混合** | 2 | ~$3 | 订阅党想省 API 钱 | Claude 订阅 + DeepSeek API Key |
 
-点击卡片 → 展开具体 19 个 operation 的绑定 → "应用到当前配置" → 批量写入 `operation_category_defaults` 和 `operation_overrides`
+#### 各预设的具体绑定
+
+**🎯 平衡（API）**：
+- 指挥层（`project.brainstorm`, `outline.volume.plan`, `showrunner.decide`, `writer.architect`）→ Claude Opus 4.6
+- 质量门（`writer.main`, `writer.final_revise`, `critic.review`, `lore.*`, `outline.chapter.plan`）→ Claude Sonnet 4.6
+- 执行层（其余）→ DeepSeek V3.2
+
+**📖 中文优化**：
+- 指挥层 → Claude Opus 4.6（仍然用 Opus，因为它中文推理也不弱）
+- 质量门（特别是 `writer.main`, `writer.final_revise`）→ Alibaba Qwen3-Max（中文文学表达最强之一）
+- 执行层 → Alibaba Qwen3.5-Flash（$0.029/$0.286，比 DeepSeek 更便宜且中文优）
+- `lore.style.generate` → Alibaba Qwen3-Max（语言风格定义对中文理解敏感）
+
+**💰 极致性价比**：全部 19 个 operation → DeepSeek V3.2
+
+**🏆 榜首性能**：
+- 指挥层 → Gemini 3.1 Pro Preview（2026-04 榜首）
+- 质量门 → Claude Sonnet 4.6
+- 执行层 → DeepSeek V3.2
+
+**🎟 纯订阅党**：
+- 指挥层 → Claude Opus 4.6 (CLI)
+- 质量门 → Claude Sonnet 4.6 (CLI)
+- 执行层 → Claude Haiku 4.5 (CLI)
+
+**🔀 订阅+API 混合**：
+- 指挥层 → Claude Opus 4.6 (CLI)
+- 质量门 → Claude Sonnet 4.6 (CLI)
+- 执行层 → DeepSeek V3.2 (API)
+
+点击预设卡片 → 展开"影响哪些 operation" 详情 → "应用到当前配置" → 批量写入 `operation_category_defaults` 和 `operation_overrides`
 
 ### 7.3 Usage 页（`/usage` — 新建）
 
@@ -674,32 +739,31 @@ curl -sS -X POST "http://localhost:3000/api/operation/run" \
 4. `resolveOperationTarget()` + 测试
 5. `enforceBudget()` + 测试
 
-### Phase 1.B：Provider 适配器（可并行 — 7 个独立文件）
+### Phase 1.B：Provider 适配器（可并行）
 6. `AnthropicAPIAdapter`
-7. `OpenAIAPIAdapter`
-8. `DeepSeekAPIAdapter`
-9. `GeminiAPIAdapter`
-10. `XaiAPIAdapter`
-11. `ClaudeCLIAdapter`（依赖 Remote Agent 协作）
-12. `GeminiCLIAdapter`
+7. `OpenAICompatibleAdapter`（基类，覆盖 OpenAI / DeepSeek / Qwen / Zhipu / Moonshot，通过 baseURL 区分）
+8. `GeminiAPIAdapter`
+9. `ClaudeCLIAdapter`（依赖 Remote Agent 协作）
+10. `GeminiCLIAdapter`
 
 ### Phase 1.C：统一执行入口（串行）
-13. `runOperation()` + `runOperationStream()`
-14. `createFailureSnapshot()` + `resume()`
-15. `POST /api/operation/run` 路由
-16. `POST /api/snapshots/:id/resume` 路由
+11. `runOperation()` + `runOperationStream()`
+12. `createFailureSnapshot()` + `resume()`
+13. `POST /api/operation/run` 路由
+14. `POST /api/snapshots/:id/resume` 路由
+15. `checkBudget()` UI 预检 API
 
 ### Phase 1.D：UI 改造（可并行 — 3 个不同页面）
-17. Settings 页重写（3 个 Tab + 预设菜单）
-18. `/usage` 页新建
-19. Remote Agent 启动时的 target 可用性扫描
+16. Settings 页重写（3 个 Tab + 预设菜单）
+17. `/usage` 页新建
+18. Remote Agent 启动时的 target 可用性扫描
 
 ### Phase 1.E：迁移与收尾（串行）
-20. `agents.yaml` 迁移脚本
-21. `writers-room.sh` 等 Shell 脚本改造
-22. 5 个预设定义与"应用预设"交互
-23. 集成测试 + E2E 验证
-24. 更新 `docs/STATUS.md`（勾选 Feature 1 完成状态）
+19. `agents.yaml` 迁移脚本
+20. `writers-room.sh` 等 Shell 脚本改造
+21. 6 个预设定义与"应用预设"交互
+22. 集成测试 + E2E 验证
+23. 更新 `docs/STATUS.md`（勾选 Feature 1 完成状态）
 
 ---
 
@@ -730,9 +794,13 @@ curl -sS -X POST "http://localhost:3000/api/operation/run" \
 
 ## 14. 参考资料
 
+- **[LLM-Price 仓库](https://github.com/syaoranwe/LLM-Price)** — 本 spec 定价表的主要来源
 - [Best AI Models April 2026](https://www.buildfastwithai.com/blogs/best-ai-models-april-2026)
 - [Claude API Pricing Docs](https://platform.claude.com/docs/en/about-claude/pricing)
 - [DeepSeek API Pricing](https://api-docs.deepseek.com/quick_start/pricing/)
 - [Gemini API Pricing 2026](https://www.tldl.io/resources/google-gemini-api-pricing)
+- [Alibaba Qwen DashScope](https://dashscope.aliyuncs.com/)
+- [Zhipu BigModel](https://open.bigmodel.cn/)
+- [Moonshot Kimi](https://platform.moonshot.cn/)
 - [NovelForge STATUS.md](../../STATUS.md)
 - [NovelForge ROADMAP.md](../../ROADMAP.md)
