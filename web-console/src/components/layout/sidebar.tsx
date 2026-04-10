@@ -17,6 +17,7 @@ import {
   CheckSquare,
   Settings,
   Terminal,
+  DollarSign,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -55,6 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: '系统',
     items: [
+      { href: '/usage', label: '用量监控', icon: DollarSign },
       { href: '/settings', label: '配置', icon: Settings },
       { href: '/terminal', label: '终端', icon: Terminal },
     ],
