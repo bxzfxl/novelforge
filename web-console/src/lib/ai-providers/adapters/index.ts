@@ -17,3 +17,8 @@ export function registerAllAdapters(): void {
   registerAdapter(new GeminiCLIAdapter());
   registered = true;
 }
+
+/** 仅供测试：重置注册标志（配合 factory.__clearAdapters 使用）。 */
+export function __resetRegisteredFlag(): void {
+  registered = false;
+}
