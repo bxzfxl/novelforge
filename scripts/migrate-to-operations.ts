@@ -55,9 +55,14 @@ async function main() {
     process.exit(0);
   }
 
-  // 备份原文件
-  await copyFile(AGENTS_YAML, BACKUP);
-  console.log(`✓ 备份已保存至 ${BACKUP}`);
+  // 备份原文件（保留首次备份，避免二次运行覆盖原始内容）
+  try {
+    await access(BACKUP);
+    console.log(`✓ 备份已存在，跳过：${BACKUP}`);
+  } catch {
+    await copyFile(AGENTS_YAML, BACKUP);
+    console.log(`✓ 备份已保存至 ${BACKUP}`);
+  }
 
   // 读取并解析
   const raw = await readFile(AGENTS_YAML, 'utf8');
