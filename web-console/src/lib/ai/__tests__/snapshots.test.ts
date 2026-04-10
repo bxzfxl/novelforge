@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Database from 'better-sqlite3';
 import { rm, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { tmpdir } from 'node:os';
 import { SCHEMA } from '@/lib/db/schema';
 import { seedModelTargets } from '@/lib/db/seed-model-targets';
 import { seedOperations } from '@/lib/db/seed-operations';
@@ -9,7 +10,8 @@ import * as dbModule from '@/lib/db/index';
 import { ProviderAPIError } from '@/lib/ai-providers/errors';
 import type { ExecuteParams } from '@/lib/ai-providers/types';
 
-const TEST_SNAPSHOT_DIR = path.resolve(process.cwd(), '..', 'workspace', 'snapshots');
+const TEST_SNAPSHOT_DIR = path.join(tmpdir(), `nf-snap-test-${process.pid}-${Date.now()}`);
+process.env.NOVELFORGE_SNAPSHOT_DIR = TEST_SNAPSHOT_DIR;
 
 describe('createFailureSnapshot', () => {
   let db: Database.Database;
@@ -26,7 +28,6 @@ describe('createFailureSnapshot', () => {
   afterEach(async () => {
     db.close();
     vi.restoreAllMocks();
-    // 清理测试快照文件
     try {
       await rm(TEST_SNAPSHOT_DIR, { recursive: true, force: true });
     } catch {

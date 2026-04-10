@@ -10,10 +10,16 @@ import {
 import { classifyError } from '@/lib/ai-providers/errors';
 import type { ExecuteParams } from '@/lib/ai-providers/types';
 
-const SNAPSHOT_DIR = path.resolve(process.cwd(), '..', 'workspace', 'snapshots');
+function getSnapshotDir(): string {
+  // 允许通过环境变量覆盖（测试用，避免并行测试文件写入冲突）
+  return (
+    process.env.NOVELFORGE_SNAPSHOT_DIR ??
+    path.resolve(process.cwd(), '..', 'workspace', 'snapshots')
+  );
+}
 
 async function ensureSnapshotDir(): Promise<void> {
-  await mkdir(SNAPSHOT_DIR, { recursive: true });
+  await mkdir(getSnapshotDir(), { recursive: true });
 }
 
 export interface FailureContext {
@@ -41,7 +47,7 @@ export async function createFailureSnapshot(
 
   const snapshotId = nanoid(12);
   const category = classifyError(ctx.error);
-  const payloadPath = path.join(SNAPSHOT_DIR, `${snapshotId}.json`);
+  const payloadPath = path.join(getSnapshotDir(), `${snapshotId}.json`);
 
   const payload = {
     operationId: ctx.operationId,

@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', '.next', 'dist'],
+    pool: 'forks',
   },
   resolve: {
     alias: {

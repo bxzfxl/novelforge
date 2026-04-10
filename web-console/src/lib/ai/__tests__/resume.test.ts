@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Database from 'better-sqlite3';
 import { mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
+import { tmpdir } from 'node:os';
 import { SCHEMA } from '@/lib/db/schema';
 import { seedModelTargets } from '@/lib/db/seed-model-targets';
 import { seedOperations } from '@/lib/db/seed-operations';
@@ -10,7 +11,8 @@ import { registerAdapter, __clearAdapters } from '@/lib/ai-providers/factory';
 import type { ProviderAdapter } from '@/lib/ai-providers/types';
 import { ProviderAPIError } from '@/lib/ai-providers/errors';
 
-const SNAPSHOT_DIR = path.resolve(process.cwd(), '..', 'workspace', 'snapshots');
+const SNAPSHOT_DIR = path.join(tmpdir(), `nf-snap-resume-${process.pid}-${Date.now()}`);
+process.env.NOVELFORGE_SNAPSHOT_DIR = SNAPSHOT_DIR;
 
 describe('resumeSnapshot', () => {
   let db: Database.Database;
