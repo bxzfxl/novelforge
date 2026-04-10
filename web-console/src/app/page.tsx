@@ -5,11 +5,15 @@
  * 展示 Agent 连接状态统计卡片 + 最近进程列表
  */
 
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useAgentStore } from '@/stores/agent-store';
 import { useAgent } from '@/hooks/use-agent';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Cpu, CheckCircle2, XCircle, Wifi } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Cpu, CheckCircle2, XCircle, Wifi, BookPlus, Sparkles } from 'lucide-react';
+import type { ProjectStatusResponse } from '@/lib/project-config';
 
 // ──────────────────────────────────────────────
 // 进程状态 → Badge 样式映射
@@ -80,6 +84,16 @@ export default function DashboardPage() {
   const connected = useAgentStore((s) => s.connected);
   const processes = useAgentStore((s) => s.processes);
 
+  // 项目初始化状态
+  const [projectStatus, setProjectStatus] = useState<ProjectStatusResponse | null>(null);
+
+  useEffect(() => {
+    fetch('/api/project/status')
+      .then((r) => r.json())
+      .then((data) => setProjectStatus(data))
+      .catch(() => setProjectStatus({ initialized: false }));
+  }, []);
+
   const runningCount = processes.filter((p) => p.status === 'running').length;
   const completedCount = processes.filter((p) => p.status === 'completed').length;
   const failedCount = processes.filter((p) => p.status === 'failed').length;
@@ -89,12 +103,55 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
     .slice(0, 10);
 
+  // 未初始化 → 显示引导卡片
+  const needsInit = projectStatus !== null && !projectStatus.initialized;
+  const projectTitle = projectStatus?.project?.title;
+
   return (
     <div className="space-y-6">
+      {/* 项目初始化引导卡片 */}
+      {needsInit && (
+        <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 shrink-0">
+                <Sparkles className="size-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-base">还没有小说项目</CardTitle>
+                <CardDescription className="mt-1">
+                  通过向导创建你的第一个小说项目 — 基础信息、世界观、角色、风格、大纲一站式初始化
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Link href="/project/new">
+              <Button className="gap-2 bg-amber-600 hover:bg-amber-700">
+                <BookPlus className="size-4" />
+                创建新小说项目
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 页面标题 */}
-      <div>
-        <h2 className="text-xl font-semibold text-stone-800">仪表盘</h2>
-        <p className="mt-1 text-sm text-stone-500">系统运行概览</p>
+      <div className="flex items-end justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-stone-800">仪表盘</h2>
+          <p className="mt-1 text-sm text-stone-500">
+            {projectTitle ? `当前项目：${projectTitle}` : '系统运行概览'}
+          </p>
+        </div>
+        {projectStatus?.initialized && (
+          <Link href="/project/new">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <BookPlus className="size-3.5" />
+              新建项目
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* 统计卡片 4 列 */}

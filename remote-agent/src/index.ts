@@ -20,11 +20,31 @@ const PORT = Number(process.env.AGENT_PORT) || 9100;
 
 /**
  * 项目根目录：文件操作的白名单根路径。
- * 默认取当前工作目录，可通过 PROJECT_ROOT 环境变量指定。
+ * 优先级：
+ *   1. PROJECT_ROOT 环境变量
+ *   2. 自动检测 — 若当前目录位于 monorepo 的 remote-agent 子目录，
+ *      且父目录存在 pnpm-workspace.yaml，则使用父目录
+ *   3. 当前工作目录
  */
-const PROJECT_ROOT = process.env.PROJECT_ROOT
-  ? path.resolve(process.env.PROJECT_ROOT)
-  : path.resolve(process.cwd());
+function detectProjectRoot(): string {
+  if (process.env.PROJECT_ROOT) {
+    return path.resolve(process.env.PROJECT_ROOT);
+  }
+  const cwd = path.resolve(process.cwd());
+  // 若 cwd 以 remote-agent 结尾，尝试上一级
+  if (path.basename(cwd) === 'remote-agent') {
+    const parent = path.dirname(cwd);
+    try {
+      statSync(path.join(parent, 'pnpm-workspace.yaml'));
+      return parent;
+    } catch {
+      // 父目录无 workspace 标记，回退到 cwd
+    }
+  }
+  return cwd;
+}
+
+const PROJECT_ROOT = detectProjectRoot();
 
 const agentConfig: AgentConfig = {
   port: PORT,
