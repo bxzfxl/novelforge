@@ -563,3 +563,113 @@ export function insertTokenUsageV2(row: TokenUsageInsert): void {
       row.role ?? null,
     );
 }
+
+// ── Usage analytics ──────────────────────────────
+
+export interface UsageSummary {
+  today: number;
+  week: number;
+  month: number;
+  total: number;
+  cliSavedMonth: number;
+}
+
+export function getUsageSummary(): UsageSummary {
+  const db = getDb();
+  const today = (db
+    .prepare(`SELECT COALESCE(SUM(cost_usd), 0) as t FROM token_usage WHERE date(timestamp) = date('now')`)
+    .get() as { t: number }).t;
+  const week = (db
+    .prepare(`SELECT COALESCE(SUM(cost_usd), 0) as t FROM token_usage WHERE timestamp >= datetime('now', '-7 days')`)
+    .get() as { t: number }).t;
+  const month = (db
+    .prepare(`SELECT COALESCE(SUM(cost_usd), 0) as t FROM token_usage WHERE timestamp >= datetime('now', '-30 days')`)
+    .get() as { t: number }).t;
+  const total = (db
+    .prepare(`SELECT COALESCE(SUM(cost_usd), 0) as t FROM token_usage`)
+    .get() as { t: number }).t;
+
+  // CLI 节省估算：对 CLI 模式行，计算若走 API 的等效费用
+  const cliSavedMonth = (db
+    .prepare(
+      `SELECT COALESCE(SUM(
+         CASE
+           WHEN mt_api.input_price_per_1m IS NOT NULL
+           THEN (tu.input_tokens * mt_api.input_price_per_1m / 1000000.0) +
+                (tu.output_tokens * mt_api.output_price_per_1m / 1000000.0)
+           ELSE 0
+         END
+       ), 0) as saved
+       FROM token_usage tu
+       LEFT JOIN model_targets mt ON tu.target_id = mt.id
+       LEFT JOIN model_targets mt_api ON mt.model_id = mt_api.model_id AND mt_api.mode = 'api'
+       WHERE tu.was_cli_mode = 1 AND tu.timestamp >= datetime('now', '-30 days')`,
+    )
+    .get() as { saved: number }).saved;
+
+  return { today, week, month, total, cliSavedMonth };
+}
+
+export interface OperationBreakdownRow {
+  operation_id: string;
+  calls: number;
+  total_input: number;
+  total_output: number;
+  total_cost: number;
+}
+
+export function getUsageByOperation(days = 30): OperationBreakdownRow[] {
+  return getDb()
+    .prepare(
+      `SELECT operation_id,
+              COUNT(*) as calls,
+              SUM(input_tokens) as total_input,
+              SUM(output_tokens) as total_output,
+              SUM(cost_usd) as total_cost
+       FROM token_usage
+       WHERE operation_id IS NOT NULL AND timestamp >= datetime('now', ?)
+       GROUP BY operation_id
+       ORDER BY total_cost DESC`,
+    )
+    .all(`-${days} days`) as OperationBreakdownRow[];
+}
+
+export interface UsageByModelRow {
+  target_id: string;
+  calls: number;
+  total_cost: number;
+}
+
+export function getUsageByModel(days = 30): UsageByModelRow[] {
+  return getDb()
+    .prepare(
+      `SELECT target_id, COUNT(*) as calls, SUM(cost_usd) as total_cost
+       FROM token_usage
+       WHERE target_id IS NOT NULL AND timestamp >= datetime('now', ?)
+       GROUP BY target_id
+       ORDER BY total_cost DESC`,
+    )
+    .all(`-${days} days`) as UsageByModelRow[];
+}
+
+export interface TimeSeriesRow {
+  day: string;
+  total_cost: number;
+  total_calls: number;
+  total_tokens: number;
+}
+
+export function getUsageTimeseries(days = 30): TimeSeriesRow[] {
+  return getDb()
+    .prepare(
+      `SELECT date(timestamp) as day,
+              SUM(cost_usd) as total_cost,
+              COUNT(*) as total_calls,
+              SUM(input_tokens + output_tokens) as total_tokens
+       FROM token_usage
+       WHERE timestamp >= datetime('now', ?)
+       GROUP BY day
+       ORDER BY day`,
+    )
+    .all(`-${days} days`) as TimeSeriesRow[];
+}
