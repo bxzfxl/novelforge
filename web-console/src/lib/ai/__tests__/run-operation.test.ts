@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Database from 'better-sqlite3';
+import { mkdir, rm } from 'node:fs/promises';
+import path from 'node:path';
 import { SCHEMA } from '@/lib/db/schema';
 import { seedModelTargets } from '@/lib/db/seed-model-targets';
 import { seedOperations } from '@/lib/db/seed-operations';
@@ -10,6 +12,8 @@ import {
 } from '@/lib/ai-providers/factory';
 import type { ProviderAdapter } from '@/lib/ai-providers/types';
 import { OperationFailedError, ProviderAPIError } from '@/lib/ai-providers/errors';
+
+const SNAPSHOT_DIR = path.resolve(process.cwd(), '..', 'workspace', 'snapshots');
 
 function makeAdapter(providers: string[], mode: 'api' | 'cli', impl: {
   execute?: () => Promise<unknown>;
@@ -36,18 +40,24 @@ function makeAdapter(providers: string[], mode: 'api' | 'cli', impl: {
 describe('runOperation', () => {
   let db: Database.Database;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     db = new Database(':memory:');
     db.exec(SCHEMA);
     seedModelTargets(db);
     seedOperations(db);
     vi.spyOn(dbModule, 'getDb').mockReturnValue(db);
     __clearAdapters();
+    await mkdir(SNAPSHOT_DIR, { recursive: true });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     db.close();
     vi.restoreAllMocks();
+    try {
+      await rm(SNAPSHOT_DIR, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
   });
 
   it('happy path: runs, records usage, returns result', async () => {

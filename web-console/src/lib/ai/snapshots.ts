@@ -90,14 +90,49 @@ export async function createFailureSnapshot(
 
 /**
  * 尝试通过 fallback 模型分析失败原因。
- * Task 15 会将此函数接入 runOperation + budget.fallback_target_id。
- * 当前实现抛出异常以触发 null summary 路径。
+ * 若 budget 未配置 fallback_target_id，抛出异常触发 null summary 路径。
  */
 export async function attemptFallbackAnalysis(
-  _ctx: FailureContext,
+  ctx: FailureContext,
 ): Promise<{ summary: string; hint: string }> {
-  // Task 15 将在此处接入 runOperation
-  throw new Error('Fallback analysis not wired yet');
+  const { getBudgetConfig } = await import('@/lib/db/queries');
+  const budget = getBudgetConfig();
+  if (!budget.fallback_target_id) {
+    throw new Error('No fallback target configured');
+  }
+
+  const { getAdapterForTarget } = await import('@/lib/ai-providers/factory');
+  const adapter = getAdapterForTarget(budget.fallback_target_id);
+
+  const analysisPrompt = `You are a failure analysis assistant. An AI operation just failed.
+
+Operation: ${ctx.operationId}
+Target: ${ctx.targetId}
+Error: ${ctx.error.message}
+
+Please analyze and output EXACTLY this JSON (no preamble, no code fences):
+{
+  "summary": "one-sentence description of what was being attempted",
+  "hint": "specific recommendation for resuming"
+}`;
+
+  const result = await adapter.execute({
+    targetId: budget.fallback_target_id,
+    operationId: ctx.operationId,
+    messages: [{ role: 'user', content: analysisPrompt }],
+    maxTokens: 500,
+    temperature: 0.2,
+  });
+
+  // 从响应中提取 JSON
+  const match = result.content.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Fallback model did not return valid JSON');
+
+  const parsed = JSON.parse(match[0]) as { summary: string; hint: string };
+  if (typeof parsed.summary !== 'string' || typeof parsed.hint !== 'string') {
+    throw new Error('Fallback model returned malformed analysis');
+  }
+  return parsed;
 }
 
 /**
