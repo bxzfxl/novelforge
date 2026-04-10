@@ -12,14 +12,14 @@ export class AIError extends Error {
 
 export class OperationNotConfiguredError extends AIError {
   constructor(public operationId: string) {
-    super(`Operation ${operationId} has no model binding (no override, no category default)`);
+    super(`OperationNotConfiguredError: Operation ${operationId} has no model binding (no override, no category default)`);
     this.name = 'OperationNotConfiguredError';
   }
 }
 
 export class OperationDisabledError extends AIError {
   constructor(public operationId: string) {
-    super(`Operation ${operationId} is disabled in configuration`);
+    super(`OperationDisabledError: Operation ${operationId} is disabled in configuration`);
     this.name = 'OperationDisabledError';
   }
 }
