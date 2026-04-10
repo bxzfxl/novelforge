@@ -1,78 +1,6 @@
-export const SCHEMA = `
-CREATE TABLE IF NOT EXISTS config (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL,
-  encrypted INTEGER DEFAULT 0,
-  updated_at TEXT DEFAULT (datetime('now'))
-);
+-- Migration 002: AI Operations + Model Targets + Budget + Snapshots
 
-CREATE TABLE IF NOT EXISTS processes (
-  id TEXT PRIMARY KEY,
-  cli_type TEXT NOT NULL CHECK(cli_type IN ('claude', 'gemini')),
-  role TEXT NOT NULL,
-  chapter_number INTEGER,
-  status TEXT NOT NULL CHECK(status IN ('starting', 'running', 'completed', 'failed', 'killed')),
-  started_at TEXT NOT NULL,
-  completed_at TEXT,
-  exit_code INTEGER,
-  input_tokens INTEGER,
-  output_tokens INTEGER,
-  output_file TEXT,
-  error_message TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS chapters (
-  chapter_number INTEGER PRIMARY KEY,
-  volume INTEGER NOT NULL,
-  title TEXT,
-  chapter_type TEXT NOT NULL CHECK(chapter_type IN ('daily', 'plot_advance', 'climax', 'foreshadow_resolve')),
-  word_count INTEGER,
-  status TEXT NOT NULL CHECK(status IN ('planned', 'in_progress', 'completed', 'revision')),
-  writers_room_config TEXT,
-  total_tokens INTEGER,
-  created_at TEXT DEFAULT (datetime('now')),
-  completed_at TEXT
-);
-
-CREATE TABLE IF NOT EXISTS checkpoints (
-  id TEXT PRIMARY KEY,
-  volume INTEGER NOT NULL,
-  chapter_number INTEGER NOT NULL,
-  status TEXT NOT NULL CHECK(status IN ('pending', 'approved', 'revision_requested', 'rollback')),
-  report_path TEXT NOT NULL,
-  human_decision TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  reviewed_at TEXT
-);
-
-CREATE TABLE IF NOT EXISTS token_usage (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  process_id TEXT REFERENCES processes(id),
-  cli_type TEXT NOT NULL,
-  model TEXT,
-  input_tokens INTEGER NOT NULL,
-  output_tokens INTEGER NOT NULL,
-  cache_read_tokens INTEGER NOT NULL DEFAULT 0,
-  cache_write_tokens INTEGER NOT NULL DEFAULT 0,
-  target_id TEXT,
-  operation_id TEXT,
-  cost_usd REAL NOT NULL DEFAULT 0,
-  was_cli_mode INTEGER NOT NULL DEFAULT 0,
-  chapter_number INTEGER,
-  role TEXT,
-  timestamp TEXT DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS events (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  type TEXT NOT NULL CHECK(type IN ('pipeline', 'writers_room', 'lore_update', 'checkpoint', 'error', 'system')),
-  message TEXT NOT NULL,
-  details TEXT,
-  chapter_number INTEGER,
-  timestamp TEXT DEFAULT (datetime('now'))
-);
-
+-- ① Model targets (model × mode combinations)
 CREATE TABLE IF NOT EXISTS model_targets (
   id TEXT PRIMARY KEY,
   model_id TEXT NOT NULL,
@@ -96,6 +24,7 @@ CREATE TABLE IF NOT EXISTS model_targets (
   updated_at TEXT DEFAULT (datetime('now'))
 );
 
+-- ② AI operations
 CREATE TABLE IF NOT EXISTS ai_operations (
   id TEXT PRIMARY KEY,
   category TEXT NOT NULL,
@@ -108,18 +37,21 @@ CREATE TABLE IF NOT EXISTS ai_operations (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- ③ Category-level defaults
 CREATE TABLE IF NOT EXISTS operation_category_defaults (
   category TEXT PRIMARY KEY,
   target_id TEXT NOT NULL REFERENCES model_targets(id),
   updated_at TEXT DEFAULT (datetime('now'))
 );
 
+-- ④ Operation-level overrides
 CREATE TABLE IF NOT EXISTS operation_overrides (
   operation_id TEXT PRIMARY KEY REFERENCES ai_operations(id),
   target_id TEXT NOT NULL REFERENCES model_targets(id),
   updated_at TEXT DEFAULT (datetime('now'))
 );
 
+-- ⑤ Budget config (single row)
 CREATE TABLE IF NOT EXISTS budget_config (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   daily_budget_usd REAL NOT NULL DEFAULT 0,
@@ -130,6 +62,7 @@ CREATE TABLE IF NOT EXISTS budget_config (
   updated_at TEXT DEFAULT (datetime('now'))
 );
 
+-- ⑥ Pipeline snapshots
 CREATE TABLE IF NOT EXISTS pipeline_snapshots (
   id TEXT PRIMARY KEY,
   timestamp TEXT NOT NULL,
@@ -145,9 +78,17 @@ CREATE TABLE IF NOT EXISTS pipeline_snapshots (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- ⑦ Extend token_usage with cost tracking
+ALTER TABLE token_usage ADD COLUMN target_id TEXT REFERENCES model_targets(id);
+ALTER TABLE token_usage ADD COLUMN operation_id TEXT REFERENCES ai_operations(id);
+ALTER TABLE token_usage ADD COLUMN cost_usd REAL NOT NULL DEFAULT 0;
+ALTER TABLE token_usage ADD COLUMN cache_read_tokens INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE token_usage ADD COLUMN cache_write_tokens INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE token_usage ADD COLUMN was_cli_mode INTEGER NOT NULL DEFAULT 0;
+
+-- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_token_usage_operation_id ON token_usage(operation_id);
 CREATE INDEX IF NOT EXISTS idx_token_usage_target_id ON token_usage(target_id);
 CREATE INDEX IF NOT EXISTS idx_token_usage_timestamp ON token_usage(timestamp);
 CREATE INDEX IF NOT EXISTS idx_snapshots_status ON pipeline_snapshots(status);
 CREATE INDEX IF NOT EXISTS idx_operations_category ON ai_operations(category);
-`;
