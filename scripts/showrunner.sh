@@ -23,6 +23,25 @@ done
 
 # 主循环
 while true; do
+  # ── 0a. 优雅停止检查 ──
+  # /api/pipeline/stop 默认创建 workspace/.stop-requested。
+  # 看到这个文件就清理后干净退出，避免在写章节中途被 kill 留下半成品。
+  if [ -f workspace/.stop-requested ]; then
+    rm -f workspace/.stop-requested
+    echo "[制片人] 收到优雅停止请求，干净退出"
+    exit 0
+  fi
+
+  # ── 0b. 累计修正应用 ──
+  # 处理任何 checkpoints/*_instructions.md 待办：解析人工指令，把对应章节
+  # 喂给 writer.revise 重写后写回 manuscript。这一步在 decide 之前跑，让
+  # 人工修正在最近一次循环就生效。
+  if [ -f scripts/apply-corrections.cjs ]; then
+    node scripts/apply-corrections.cjs || {
+      echo "[制片人] ⚠️ apply-corrections 失败，继续推进（不阻塞）"
+    }
+  fi
+
   echo ""
   echo "=============================="
   echo "[制片人] 执行决策..."
@@ -83,18 +102,14 @@ reason: 制片人决策失败")
       ;;
 
     checkpoint)
-      echo "[制片人] → 触发检查点，暂停等待人类审阅"
+      echo "[制片人] → 触发检查点（非阻塞模式）"
       bash "$SCRIPT_DIR/checkpoint.sh"
-      echo "[制片人] 检查点已创建，等待审阅..."
-      # 等待人类审阅（轮询检查点状态）
-      while true; do
-        STATUS=$(grep "^- 决策：" checkpoints/latest.md 2>/dev/null | head -1 || echo "")
-        if [ -n "$STATUS" ]; then
-          echo "[制片人] 收到审阅决策: $STATUS"
-          break
-        fi
-        sleep 30
-      done
+      # 非阻塞：创建检查点报告后立即推 next_checkpoint，避免下次循环又触发
+      # 人类审阅在后台进行，corrections 由每次循环顶部的 apply-corrections.cjs 应用
+      node "$SCRIPT_DIR/advance-checkpoint.cjs" || {
+        echo "[制片人] ⚠️ advance-checkpoint 失败，可能下次循环还会触发同一检查点"
+      }
+      echo "[制片人] 检查点已记录，继续推进（人工修正会在下次循环顶部自动应用）"
       ;;
 
     volume_complete)

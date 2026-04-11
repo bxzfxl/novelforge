@@ -124,18 +124,30 @@ export default function PipelinePage() {
   };
 
   // ── 停止管线 ──
+  // 默认 graceful：让当前章节自然写完后退出（写 sentinel 文件，showrunner 自查）
+  // force=true: 立即 hard kill 进程树（按住 Shift 点击 或 confirm 二选一）
 
-  const handleStop = async () => {
-    if (!confirm('确认停止当前管线？正在进行的章节写作会被打断，已写入的文件会保留。')) {
-      return;
-    }
+  const handleStop = async (force: boolean) => {
+    const msg = force
+      ? '【强制停止】立即杀掉管线进程树。当前正在写的章节会被打断，workspace/current/ 可能留下半成品。确定？'
+      : '【优雅停止】管线会在写完当前章节、更新完资料后干净退出。继续？';
+    if (!confirm(msg)) return;
+
     setStopping(true);
     try {
-      const res = await fetch('/api/pipeline/stop', { method: 'POST' });
+      const res = await fetch('/api/pipeline/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force }),
+      });
       const json = await res.json();
       if (json.ok) {
-        const n = Array.isArray(json.killed) ? json.killed.length : 0;
-        toast.success(n > 0 ? `已停止 ${n} 个管线进程` : '没有正在运行的管线');
+        if (json.mode === 'force') {
+          const n = Array.isArray(json.killed) ? json.killed.length : 0;
+          toast.success(n > 0 ? `已强制停止 ${n} 个管线进程` : '没有正在运行的管线');
+        } else {
+          toast.success('已请求优雅停止，当前章节写完后会退出');
+        }
         refreshProcesses().catch(() => {});
         setTimeout(() => fetchStatus(true), 1000);
       } else {
@@ -187,15 +199,28 @@ export default function PipelinePage() {
             刷新
           </Button>
           {hasRunning ? (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={handleStop}
-              disabled={stopping}
-            >
-              <StopCircle className="mr-1.5 h-4 w-4" />
-              {stopping ? '停止中…' : '停止管线'}
-            </Button>
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleStop(false)}
+                disabled={stopping}
+                title="让当前章节自然写完后退出，不会留下半成品"
+              >
+                <StopCircle className="mr-1.5 h-4 w-4" />
+                {stopping ? '停止中…' : '优雅停止'}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleStop(true)}
+                disabled={stopping}
+                title="立即杀掉进程树，当前章节进度会丢失"
+              >
+                <StopCircle className="mr-1.5 h-4 w-4" />
+                强制停止
+              </Button>
+            </>
           ) : (
             <Button size="sm" onClick={handleStart} disabled={starting}>
               <PlayCircle className="mr-1.5 h-4 w-4" />

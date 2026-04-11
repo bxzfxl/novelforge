@@ -4,7 +4,8 @@
  * 返回 { ok: true, processId }
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { existsSync } from 'node:fs';
+import { existsSync, unlinkSync } from 'node:fs';
+import path from 'node:path';
 import { nanoid } from 'nanoid';
 import { agentClient } from '@/lib/agent-client';
 import { insertEvent } from '@/lib/db/queries';
@@ -52,6 +53,18 @@ export async function POST(request: NextRequest) {
       body = await request.json();
     } catch {
       // 允许空 body
+    }
+
+    // 启动新管线前清理可能残留的优雅停止 sentinel，
+    // 否则 showrunner 第一次循环就会看到 .stop-requested 直接退出
+    try {
+      const projRoot = process.env.PROJECT_ROOT
+        ? path.resolve(process.env.PROJECT_ROOT)
+        : path.resolve(process.cwd(), '..');
+      const sentinel = path.join(projRoot, 'workspace', '.stop-requested');
+      if (existsSync(sentinel)) unlinkSync(sentinel);
+    } catch {
+      /* ignore */
     }
 
     const processId = nanoid();
