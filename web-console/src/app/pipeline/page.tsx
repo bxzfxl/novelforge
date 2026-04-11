@@ -75,6 +75,7 @@ export default function PipelinePage() {
 
   // 从 agent store 读取运行中的 showrunner 进程，用于判断"停止"按钮是否可用
   const processes = useAgentStore((s) => s.processes);
+  const refreshProcesses = useAgentStore((s) => s.refreshProcesses);
   const runningShowrunners = processes.filter(
     (p) => p.role === 'showrunner' && (p.status === 'running' || p.status === 'starting'),
   );
@@ -108,7 +109,9 @@ export default function PipelinePage() {
       const json = await res.json();
       if (json.ok) {
         toast.success(`管线已启动，进程 ID: ${json.processId}`);
-        // 稍后刷新状态
+        // 立即刷新一次 agent 进程列表，让"停止管线"按钮尽快出现
+        refreshProcesses().catch(() => {});
+        // 稍后再刷一次管线 state
         setTimeout(() => fetchStatus(true), 1500);
       } else {
         toast.error(`启动失败: ${json.error}`);
@@ -133,6 +136,7 @@ export default function PipelinePage() {
       if (json.ok) {
         const n = Array.isArray(json.killed) ? json.killed.length : 0;
         toast.success(n > 0 ? `已停止 ${n} 个管线进程` : '没有正在运行的管线');
+        refreshProcesses().catch(() => {});
         setTimeout(() => fetchStatus(true), 1000);
       } else {
         toast.error(`停止失败: ${json.error}`);

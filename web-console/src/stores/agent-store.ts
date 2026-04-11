@@ -78,16 +78,22 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       unsubscribeStatus = agentClient.on<ProcessStatusEvent>(
         'process:status',
         (event) => {
-          set((state) => {
-            const idx = state.processes.findIndex((p) => p.id === event.processId);
+          const state = get();
+          const idx = state.processes.findIndex((p) => p.id === event.processId);
 
-            if (idx === -1) {
-              // 未知进程，暂不添加（等待下次 refreshProcesses）
-              return state;
-            }
+          if (idx === -1) {
+            // 未知进程：立即触发一次全量 refresh，让新启动的管线 / 写手进程
+            // 尽快进入列表。之前这里直接忽略，导致 UI（如 /pipeline 的停止按钮）
+            // 永远看不到新启动的 showrunner。
+            get().refreshProcesses().catch((err) => {
+              console.error('[AgentStore] refreshProcesses 失败:', err);
+            });
+            return;
+          }
 
-            // 更新对应进程的状态
-            const updated = [...state.processes];
+          // 更新对应进程的状态
+          set((s) => {
+            const updated = [...s.processes];
             updated[idx] = {
               ...updated[idx],
               status: event.status,

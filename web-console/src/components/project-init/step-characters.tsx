@@ -25,10 +25,12 @@ export default function StepCharacters() {
   const { run: runAi, loading: aiLoading } = useAiAssist();
 
   const handleAiGenerateMain = async () => {
+    // 用带前缀的纯文本格式而非 JSON：Claude 经常在 JSON 字符串值里塞直引号导致解析失败。
+    // 用 "字段名: 值" 一行一段的格式最容易稳定解析，也方便 Claude 输出长段落。
     const content = await runAi({
       operationId: 'project.brainstorm',
       systemPrompt:
-        '你是一个网文角色设计师。根据用户提供的项目信息和世界观，生成一个主角的完整角色卡。严格按以下 JSON 格式输出，不要添加任何解释、不要包裹代码块标记：\n{\n  "name": "姓名",\n  "role": "身份 / 定位",\n  "personality": "性格特征，一段话",\n  "appearance": "外貌描述，一段话",\n  "background": "背景故事，一段话",\n  "arc": "成长弧线，从……到……"\n}',
+        '你是一个网文角色设计师。根据用户提供的项目信息和世界观，生成一个主角的完整角色卡。\n\n严格按以下格式输出（每个字段一行前缀，后续段落直接写在该行后面，字段之间不要空行、不要包裹代码块、不要额外解释）：\n\nNAME: 姓名\nROLE: 身份 / 定位\nPERSONALITY: 性格特征，一段话\nAPPEARANCE: 外貌描述，一段话\nBACKGROUND: 背景故事，一段话\nARC: 成长弧线，从……到……',
       userPrompt: `请为以下小说项目生成一个主角：
 
 - 标题：${form.title || '（未填）'}
@@ -39,31 +41,48 @@ export default function StepCharacters() {
 ${form.world_building || '（未填）'}`,
     });
     if (!content) return;
-    // 解析 JSON（容错：可能被代码块包裹）
-    const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-    try {
-      const parsed = JSON.parse(jsonText);
-      useProjectInitStore.setState((s) => ({
-        form: {
-          ...s.form,
-          characters: [
-            ...s.form.characters,
-            {
-              id: nanoid(8),
-              name: String(parsed.name ?? ''),
-              role: String(parsed.role ?? ''),
-              personality: String(parsed.personality ?? ''),
-              appearance: String(parsed.appearance ?? ''),
-              background: String(parsed.background ?? ''),
-              arc: String(parsed.arc ?? ''),
-            },
-          ],
-        },
-      }));
-      toast.success('已生成主角，向下滚动查看');
-    } catch {
-      toast.error('AI 返回的内容不是合法 JSON，请重试或手动创建');
+    // 解析 FIELD: value 格式，字段之间按下一个字段前缀截断
+    const FIELDS = ['NAME', 'ROLE', 'PERSONALITY', 'APPEARANCE', 'BACKGROUND', 'ARC'] as const;
+    const result: Record<string, string> = {};
+    for (let i = 0; i < FIELDS.length; i++) {
+      const cur = FIELDS[i];
+      const next = FIELDS[i + 1];
+      const startRe = new RegExp(`^\\s*${cur}\\s*[:：]\\s*`, 'm');
+      const startMatch = content.match(startRe);
+      if (!startMatch || startMatch.index === undefined) continue;
+      const start = startMatch.index + startMatch[0].length;
+      let end = content.length;
+      if (next) {
+        const endRe = new RegExp(`^\\s*${next}\\s*[:：]`, 'm');
+        const endMatch = content.slice(start).match(endRe);
+        if (endMatch && endMatch.index !== undefined) {
+          end = start + endMatch.index;
+        }
+      }
+      result[cur] = content.slice(start, end).trim();
     }
+    if (!result.NAME) {
+      toast.error('AI 返回的内容无法解析为角色卡，请重试或手动创建');
+      return;
+    }
+    useProjectInitStore.setState((s) => ({
+      form: {
+        ...s.form,
+        characters: [
+          ...s.form.characters,
+          {
+            id: nanoid(8),
+            name: result.NAME ?? '',
+            role: result.ROLE ?? '',
+            personality: result.PERSONALITY ?? '',
+            appearance: result.APPEARANCE ?? '',
+            background: result.BACKGROUND ?? '',
+            arc: result.ARC ?? '',
+          },
+        ],
+      },
+    }));
+    toast.success('已生成主角，向下滚动查看');
   };
 
   return (
