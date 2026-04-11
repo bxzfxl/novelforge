@@ -1,0 +1,6 @@
+{
+  "$comment": "项目级 Claude Code 配置。当 cwd 是 NovelForge 仓库根目录时自动生效。",
+  "env": {
+    "CLAUDE_CODE_GIT_BASH_PATH": "D:\\softwares\\Git\\bin\\bash.exe"
+  }
+}

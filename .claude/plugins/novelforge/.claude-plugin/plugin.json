@@ -1,0 +1,8 @@
+{
+  "name": "novelforge",
+  "version": "0.1.0",
+  "description": "NovelForge 项目专属插件：提供 novelforge-init skill，引导用户在 Claude Code 里通过 Q&A 初始化新小说项目",
+  "author": {
+    "name": "NovelForge"
+  }
+}
