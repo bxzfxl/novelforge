@@ -211,29 +211,41 @@ io.on('connection', (socket) => {
 
   // ── 进程管理 ────────────────────────────────────────────
 
-  /** 启动 CLI 子进程 */
+  /**
+   * 启动 CLI 子进程
+   * 注意：客户端可能以 fire-and-forget 模式调用（无 callback），
+   * 所以回调前必须判空，避免 callback is not a function 导致整个 agent 崩溃。
+   */
   socket.on('process:spawn', async (config, callback) => {
+    const safeCallback =
+      typeof callback === 'function' ? callback : () => {};
     try {
-      // 确保 cwd 在白名单内（允许绝对路径）
-      const safeCwd = path.isAbsolute(config.cwd) ? config.cwd : path.join(PROJECT_ROOT, config.cwd);
+      // 空 cwd 默认为 PROJECT_ROOT；相对路径 join 到 PROJECT_ROOT
+      const rawCwd = config?.cwd;
+      const safeCwd = !rawCwd
+        ? PROJECT_ROOT
+        : path.isAbsolute(rawCwd)
+          ? rawCwd
+          : path.join(PROJECT_ROOT, rawCwd);
       const safeConfig = { ...config, cwd: safeCwd };
 
       const processId = await processManager.spawn(safeConfig);
       console.log(`[进程] 已启动 ${config.cliType}(${config.role}): ${processId}`);
-      callback({ ok: true, processId });
+      safeCallback({ ok: true, processId });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[进程] 启动失败: ${msg}`);
-      callback({ ok: false, error: msg });
+      safeCallback({ ok: false, error: msg });
     }
   });
 
   /** 终止进程 — 客户端发送 { processId } 对象 */
   socket.on('process:kill', (data, callback) => {
+    const safeCallback = typeof callback === 'function' ? callback : () => {};
     const processId = typeof data === 'string' ? data : data.processId;
     const ok = processManager.kill(processId);
     console.log(`[进程] kill ${processId}: ${ok ? '成功' : '未找到或已结束'}`);
-    callback({ ok });
+    safeCallback({ ok });
   });
 
   /** 列出所有进程 — 客户端发送 ({}, callback) */

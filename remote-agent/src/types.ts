@@ -9,6 +9,12 @@ export interface SpawnConfig {
   env?: Record<string, string>;
   outputFile?: string;
   chapterNumber?: number;
+  /**
+   * 可选命令覆盖：当提供时，直接使用该命令启动子进程，
+   * 忽略 cliType 对应的 claude/gemini 路径。
+   * 用于管线脚本（bash scripts/showrunner.sh）等场景。
+   */
+  command?: string;
 }
 
 export interface ProcessInfo {

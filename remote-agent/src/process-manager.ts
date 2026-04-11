@@ -4,7 +4,7 @@
  * 部署到 Linux 后如需完整 PTY 支持，可在此处条件替换为 node-pty。
  */
 
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { createWriteStream, type WriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
@@ -71,8 +71,11 @@ export class ProcessManager {
     }
 
     const processId = config.id ?? nanoid(12);
+    // 当 config.command 显式提供时直接使用它（例如 bash、node），
+    // 否则回退到 cliType 对应的 claude/gemini 路径。
     const cliPath =
-      config.cliType === 'claude' ? this.config.claudePath : this.config.geminiPath;
+      config.command ??
+      (config.cliType === 'claude' ? this.config.claudePath : this.config.geminiPath);
 
     // 合并环境变量
     const env: Record<string, string> = {
@@ -181,7 +184,11 @@ export class ProcessManager {
   }
 
   /**
-   * 终止指定进程
+   * 终止指定进程（含整个进程树）
+   *
+   * Windows 上 `child.kill()` 只能终止 bash.exe 本身，它派生出来的 node / curl /
+   * claude.cmd 等子进程不会被清理。所以 Windows 走 `taskkill /F /T /PID <pid>`
+   * 显式杀整个进程树。Linux/macOS 用 SIGTERM → SIGKILL 配合 process group。
    */
   kill(processId: string): boolean {
     const rp = this.processes.get(processId);
@@ -190,10 +197,27 @@ export class ProcessManager {
       return false;
     }
 
-    rp.child.kill('SIGTERM');
-    // Windows 上 SIGTERM 无效，直接用 SIGKILL
-    if (process.platform === 'win32') {
-      rp.child.kill();
+    const pid = rp.child.pid;
+    if (pid !== undefined) {
+      if (process.platform === 'win32') {
+        // 同步 taskkill 确保子进程树被清理
+        try {
+          spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore' });
+        } catch (err) {
+          console.error(`[kill] taskkill 失败 pid=${pid}:`, err);
+        }
+      } else {
+        try {
+          // 负数 pid 表示 process group
+          process.kill(-pid, 'SIGTERM');
+          setTimeout(() => {
+            try { process.kill(-pid, 'SIGKILL'); } catch { /* already gone */ }
+          }, 2000);
+        } catch {
+          // 没有 process group 的话退回给单进程
+          rp.child.kill('SIGTERM');
+        }
+      }
     }
 
     rp.info.status = 'killed';
