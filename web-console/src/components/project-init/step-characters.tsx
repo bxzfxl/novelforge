@@ -5,23 +5,70 @@
  * 添加/删除/编辑角色卡片列表
  */
 
-import { Plus, Trash2, User } from 'lucide-react';
+import { Plus, Trash2, User, Sparkles, Loader2 } from 'lucide-react';
 import { useProjectInitStore } from '@/stores/project-init-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useAiAssist } from '@/hooks/use-ai-assist';
+import { toast } from 'sonner';
+import { nanoid } from 'nanoid';
 
 export default function StepCharacters() {
-  const characters = useProjectInitStore((s) => s.form.characters);
+  const form = useProjectInitStore((s) => s.form);
+  const characters = form.characters;
   const addCharacter = useProjectInitStore((s) => s.addCharacter);
   const updateCharacter = useProjectInitStore((s) => s.updateCharacter);
   const removeCharacter = useProjectInitStore((s) => s.removeCharacter);
+  const { run: runAi, loading: aiLoading } = useAiAssist();
+
+  const handleAiGenerateMain = async () => {
+    const content = await runAi({
+      operationId: 'project.brainstorm',
+      systemPrompt:
+        '你是一个网文角色设计师。根据用户提供的项目信息和世界观，生成一个主角的完整角色卡。严格按以下 JSON 格式输出，不要添加任何解释、不要包裹代码块标记：\n{\n  "name": "姓名",\n  "role": "身份 / 定位",\n  "personality": "性格特征，一段话",\n  "appearance": "外貌描述，一段话",\n  "background": "背景故事，一段话",\n  "arc": "成长弧线，从……到……"\n}',
+      userPrompt: `请为以下小说项目生成一个主角：
+
+- 标题：${form.title || '（未填）'}
+- 类型：${form.genre || '（未填）'}
+- 一句话简介：${form.synopsis || '（未填）'}
+
+## 世界观
+${form.world_building || '（未填）'}`,
+    });
+    if (!content) return;
+    // 解析 JSON（容错：可能被代码块包裹）
+    const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    try {
+      const parsed = JSON.parse(jsonText);
+      useProjectInitStore.setState((s) => ({
+        form: {
+          ...s.form,
+          characters: [
+            ...s.form.characters,
+            {
+              id: nanoid(8),
+              name: String(parsed.name ?? ''),
+              role: String(parsed.role ?? ''),
+              personality: String(parsed.personality ?? ''),
+              appearance: String(parsed.appearance ?? ''),
+              background: String(parsed.background ?? ''),
+              arc: String(parsed.arc ?? ''),
+            },
+          ],
+        },
+      }));
+      toast.success('已生成主角，向下滚动查看');
+    } catch {
+      toast.error('AI 返回的内容不是合法 JSON，请重试或手动创建');
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 py-6">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-2">
         <div>
           <h2 className="text-xl font-semibold mb-1">角色创建</h2>
           <p className="text-sm text-muted-foreground">
@@ -29,10 +76,26 @@ export default function StepCharacters() {
             <code className="text-xs bg-muted px-1 rounded">lore/characters/*.md</code>
           </p>
         </div>
-        <Button onClick={addCharacter} size="sm" className="gap-1.5 shrink-0">
-          <Plus className="size-4" />
-          添加角色
-        </Button>
+        <div className="flex gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAiGenerateMain}
+            disabled={aiLoading}
+          >
+            {aiLoading ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-1.5 h-4 w-4 text-amber-500" />
+            )}
+            {aiLoading ? '生成中…' : '🪄 AI 生成主角'}
+          </Button>
+          <Button onClick={addCharacter} size="sm" className="gap-1.5">
+            <Plus className="size-4" />
+            添加角色
+          </Button>
+        </div>
       </div>
 
       {characters.length === 0 ? (

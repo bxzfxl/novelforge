@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   PlayCircle,
+  StopCircle,
   RefreshCw,
   Activity,
   Clock,
@@ -23,6 +24,7 @@ import {
   AlertTriangle,
   TrendingUp,
 } from 'lucide-react';
+import { useAgentStore } from '@/stores/agent-store';
 
 // ── 类型定义 ────────────────────────────────────
 
@@ -68,7 +70,15 @@ export default function PipelinePage() {
   const [pipelineState, setPipelineState] = useState<PipelineState | null>(null);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 从 agent store 读取运行中的 showrunner 进程，用于判断"停止"按钮是否可用
+  const processes = useAgentStore((s) => s.processes);
+  const runningShowrunners = processes.filter(
+    (p) => p.role === 'showrunner' && (p.status === 'running' || p.status === 'starting'),
+  );
+  const hasRunning = runningShowrunners.length > 0;
 
   // ── 拉取状态 ──
 
@@ -110,6 +120,30 @@ export default function PipelinePage() {
     }
   };
 
+  // ── 停止管线 ──
+
+  const handleStop = async () => {
+    if (!confirm('确认停止当前管线？正在进行的章节写作会被打断，已写入的文件会保留。')) {
+      return;
+    }
+    setStopping(true);
+    try {
+      const res = await fetch('/api/pipeline/stop', { method: 'POST' });
+      const json = await res.json();
+      if (json.ok) {
+        const n = Array.isArray(json.killed) ? json.killed.length : 0;
+        toast.success(n > 0 ? `已停止 ${n} 个管线进程` : '没有正在运行的管线');
+        setTimeout(() => fetchStatus(true), 1000);
+      } else {
+        toast.error(`停止失败: ${json.error}`);
+      }
+    } catch (err) {
+      toast.error(`停止请求失败: ${String(err)}`);
+    } finally {
+      setStopping(false);
+    }
+  };
+
   // ── 轮询（5 秒） ──
 
   useEffect(() => {
@@ -148,10 +182,22 @@ export default function PipelinePage() {
             <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             刷新
           </Button>
-          <Button size="sm" onClick={handleStart} disabled={starting}>
-            <PlayCircle className="mr-1.5 h-4 w-4" />
-            {starting ? '启动中…' : '启动管线'}
-          </Button>
+          {hasRunning ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleStop}
+              disabled={stopping}
+            >
+              <StopCircle className="mr-1.5 h-4 w-4" />
+              {stopping ? '停止中…' : '停止管线'}
+            </Button>
+          ) : (
+            <Button size="sm" onClick={handleStart} disabled={starting}>
+              <PlayCircle className="mr-1.5 h-4 w-4" />
+              {starting ? '启动中…' : '启动管线'}
+            </Button>
+          )}
         </div>
       </div>
 

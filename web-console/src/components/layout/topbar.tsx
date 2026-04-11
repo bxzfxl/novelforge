@@ -6,10 +6,15 @@
  */
 
 import { useAgentStore } from '@/stores/agent-store';
+import { useAgent } from '@/hooks/use-agent';
 import { Badge } from '@/components/ui/badge';
 import { Cpu } from 'lucide-react';
 
 export function Topbar() {
+  // Topbar 在 RootLayout 中每页渲染，在这里触发全局自动连接，
+  // 这样所有页面（包括 /lore /usage /manuscript 等）都能共享同一个 Agent 连接。
+  useAgent();
+
   const connected = useAgentStore((s) => s.connected);
   const processes = useAgentStore((s) => s.processes);
 
