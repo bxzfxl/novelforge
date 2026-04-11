@@ -195,6 +195,15 @@ export const OPERATIONS: OperationSeed[] = [
     recommendedRationale: '总结整合。',
     sortOrder: 71,
   },
+  {
+    id: 'context.summarize',
+    category: 'context',
+    displayName: '章节摘要生成',
+    description: '为新写的章节生成结构化 meta 摘要（scenes / foreshadow / resolved 等）。',
+    recommendedTier: 'efficient',
+    recommendedRationale: '文本抽取与结构化，纯执行任务。',
+    sortOrder: 72,
+  },
 ];
 
 export function seedOperations(db: Database.Database): number {

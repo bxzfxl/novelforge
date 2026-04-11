@@ -30,6 +30,8 @@ export type SpawnConfig = {
   env?: Record<string, string>;
   outputFile?: string;
   chapterNumber?: number;
+  /** 可选：直接指定可执行命令（如 'bash'），覆盖 cliType 对应的默认 CLI 路径 */
+  command?: string;
 };
 
 /** 进程输出事件 payload */
@@ -278,20 +280,33 @@ class AgentClient {
     });
   }
 
-  /** 列出目录内容 */
+  /**
+   * 列出目录内容，返回所有条目名（文件 + 子目录）。
+   * 调用方自行用 `.endsWith('.md')` 或名称启发式区分文件与目录。
+   */
   listDir(dirPath: string): Promise<string[]> {
     return new Promise((resolve, reject) => {
       if (!this.socket) {
         reject(new Error('未连接到 Remote Agent'));
         return;
       }
-      this.socket.emit(EV.FILE_LIST, { path: dirPath }, (res: { entries?: string[]; error?: string }) => {
-        if (res.error) {
-          reject(new Error(res.error));
-        } else {
-          resolve(res.entries ?? []);
-        }
-      });
+      // Agent 返回 { ok, files: [{ name, isDir, size, modified }] } 或 { ok:false, error }
+      this.socket.emit(
+        EV.FILE_LIST,
+        { path: dirPath },
+        (res: {
+          ok?: boolean;
+          files?: Array<{ name: string; isDir: boolean }>;
+          error?: string;
+        }) => {
+          if (res.error) {
+            reject(new Error(res.error));
+            return;
+          }
+          const names = (res.files ?? []).map((f) => f.name);
+          resolve(names);
+        },
+      );
     });
   }
 

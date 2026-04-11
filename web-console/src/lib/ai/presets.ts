@@ -4,6 +4,8 @@ import {
   clearCategoryDefault,
 } from '@/lib/db/queries';
 import { getDb } from '@/lib/db/index';
+import { seedOperations } from '@/lib/db/seed-operations';
+import { seedModelTargets } from '@/lib/db/seed-model-targets';
 
 export interface PresetDefinition {
   id: string;
@@ -174,13 +176,19 @@ export function applyPreset(presetId: string): void {
   const preset = getPreset(presetId);
   if (!preset) throw new Error(`Unknown preset: ${presetId}`);
 
+  // 自愈：确保 ai_operations / model_targets 已填充（幂等）。
+  // 防止 dev server 缓存旧 db 单例导致 seed 未跑而 FK 失败。
+  const db = getDb();
+  seedModelTargets(db);
+  seedOperations(db);
+
   // 清除预设涉及的 category defaults
   for (const category of Object.keys(preset.categoryDefaults)) {
     clearCategoryDefault(category);
   }
 
   // 清除所有 operation overrides（全量替换）
-  getDb().prepare('DELETE FROM operation_overrides').run();
+  db.prepare('DELETE FROM operation_overrides').run();
 
   // 写入新的 category defaults
   for (const [category, targetId] of Object.entries(preset.categoryDefaults)) {
