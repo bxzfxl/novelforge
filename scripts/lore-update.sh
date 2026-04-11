@@ -43,8 +43,5 @@ $(cat lore/_context/L0-global-summary.md)
 $(cat outline/threads/foreshadow.md)
 " > "$CH_ARCHIVE/context-updates.yaml" 2>/dev/null
 
-# TODO: 解析 context-updates.yaml 并应用到各文件
-# 当前版本需要人工确认更新内容
-
 echo "[资料更新] 更新建议已生成: $CH_ARCHIVE/context-updates.yaml"
-echo "[资料更新] 请检查并手动应用（自动应用功能待实现）"
+echo "[资料更新] 由 scripts/apply-chapter-state.cjs 在 showrunner 主循环里自动应用"

@@ -205,7 +205,13 @@ call_operation "writer.architect" "prompts/writers/architect.md" "$CH_DIR/step2-
 echo "[编剧室] Step 3: 主笔撰写初稿..."
 cat > "$CH_DIR/step3-ctx.md" <<EOF
 # 任务
-严格按照章节结构稿撰写第 $CHAPTER_NUM 章的完整正文。直接输出 Markdown 格式的章节正文，不要添加任何说明。
+严格按照章节结构稿撰写第 $CHAPTER_NUM 章的完整正文。
+
+# 输出要求（极其严格）
+- **第一个字符必须是 \`#\`**（章节标题），从那一行开始就是正文
+- **不要任何前言**：不要 "好的，我来写..."、"以下是第 N 章..."
+- 不要包裹 \`\`\`markdown\`\`\` 代码块
+- 不要在末尾追加 "字数统计"、"作者后记"
 
 ## 章节结构稿
 $(cat "$CH_DIR/structure-draft.md")
@@ -223,6 +229,22 @@ $WORLD_RULES
 $RECENT_SUMS
 EOF
 call_operation "writer.main" "prompts/writers/main-writer.md" "$CH_DIR/step3-ctx.md" "$CH_DIR/draft-v1.md"
+
+# 防御性兜底：剥离 meta 前言
+if [ -f "$CH_DIR/draft-v1.md" ]; then
+  TARGET_FILE="$CH_DIR/draft-v1.md" node -e '
+    const fs = require("fs");
+    const file = process.env.TARGET_FILE;
+    const raw = fs.readFileSync(file, "utf8");
+    if (!/^# /.test(raw)) {
+      const idx = raw.search(/^# /m);
+      if (idx > 0) {
+        fs.writeFileSync(file, raw.slice(idx), "utf8");
+        console.error("[Step 3] 剥离 meta 前言 (" + idx + " 字符)");
+      }
+    }
+  '
+fi
 
 # ── Step 4: 可选的角色/批评家审阅 ───────────────────
 if [ "$CHAPTER_TYPE" = "climax" ] || [ "$CHAPTER_TYPE" = "plot_advance" ]; then
@@ -270,18 +292,44 @@ FEEDBACK=""
 
 cat > "$CH_DIR/step5-ctx.md" <<EOF
 # 任务
-基于反馈修订以下章节初稿，输出最终定稿。直接输出 Markdown 格式的章节正文，不要添加说明。
+基于反馈修订以下章节初稿，输出最终定稿。
+
+# 输出要求（极其严格）
+- **第一个字符必须是 \`#\`**（章节标题的 markdown 头），整篇正文从这一行开始，往下是章节段落
+- **不要任何前言**：不要 "我来根据反馈进行修订..."、"以下是修订后的版本..."、"---" 分隔符之前的任何说明
+- **不要在末尾追加** "改动说明"、"修订要点"
+- 反馈内容是给你看的，你直接出已经吸收反馈的成稿，**绝不要复述反馈**
+- 不要包裹 \`\`\`markdown\`\`\` 代码块
+- 章节字数与初稿保持在 ±10% 内
 
 ## 初稿
 $(cat "$CH_DIR/draft-v1.md")
 
-## 反馈
+## 反馈（仅供你修订时参考，不要复述）
 ${FEEDBACK:-无反馈}
 
 ## 风格指南
 $STYLE_VOICE
 EOF
 call_operation "writer.revise" "prompts/writers/revise.md" "$CH_DIR/step5-ctx.md" "$CH_DIR/draft-final.md"
+
+# 防御性兜底：如果 AI 仍然在前面塞了"我来修订..."这种 meta 前言，
+# 找到第一个 ^# 标题行，从那里开始截断。
+if [ -f "$CH_DIR/draft-final.md" ]; then
+  TARGET_FILE="$CH_DIR/draft-final.md" node -e '
+    const fs = require("fs");
+    const file = process.env.TARGET_FILE;
+    const raw = fs.readFileSync(file, "utf8");
+    if (!/^# /.test(raw)) {
+      const idx = raw.search(/^# /m);
+      if (idx > 0) {
+        const trimmed = raw.slice(idx);
+        fs.writeFileSync(file, trimmed, "utf8");
+        console.error("[Step 5] 剥离 meta 前言 (" + idx + " 字符)");
+      }
+    }
+  '
+fi
 
 # ── Step 6: 复制定稿到稿件目录 ─────────────────────
 CH_FILE="$MANUSCRIPT_DIR/ch-$(printf '%03d' $CHAPTER_NUM).md"

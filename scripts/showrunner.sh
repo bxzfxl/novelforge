@@ -68,8 +68,16 @@ reason: 制片人决策失败")
         --type "${CHAPTER_TYPE:-daily}" \
         --decision "$DECISION"
 
-      # 4. 更新资料
+      # 4. 让 AI 生成资料更新建议
       bash "$SCRIPT_DIR/lore-update.sh" --chapter "$CHAPTER_NUM"
+
+      # 5. 自动应用资料更新 + 更新 pipeline-state.yaml
+      # 没有这一步，下一次 decide 会读到 current_chapter=0 导致反复写第 1 章
+      node "$SCRIPT_DIR/apply-chapter-state.cjs" --chapter "$CHAPTER_NUM" || {
+        echo "[制片人] ⚠️ apply-chapter-state 失败，pipeline-state.yaml 未更新"
+        echo "[制片人] 为避免反复写同一章，管线暂停。请手动检查 workspace/archive/ch-$CHAPTER_NUM"
+        exit 1
+      }
 
       echo "[制片人] 第 $CHAPTER_NUM 章完成"
       ;;
