@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist/renderer",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/renderer/*"],
+      "@novelforge/shared": ["../../packages/shared/src"],
+      "@novelforge/prompts": ["../../packages/prompts/src"]
+    }
+  },
+  "include": ["src/renderer/**/*", "src/preload/**/*"]
+}

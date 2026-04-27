@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist/main",
+    "baseUrl": ".",
+    "paths": {
+      "@novelforge/shared": ["../../packages/shared/src"],
+      "@novelforge/prompts": ["../../packages/prompts/src"]
+    }
+  },
+  "include": ["src/main/**/*"]
+}
