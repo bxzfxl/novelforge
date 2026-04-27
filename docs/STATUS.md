@@ -1,148 +1,148 @@
 # NovelForge 项目状态快照
 
-> **最后更新**：2026-04-10
-> 本文件描述项目当前实现状态。路线图和开发计划见 [`ROADMAP.md`](./ROADMAP.md)。
+> **最后更新**：2026-04-27
+> 本文件描述项目当前实现状态。路线图见 [`ROADMAP.md`](./ROADMAP.md)。
 
-## 整体完成度
+## 整体状态
 
-约 **85%** — Feature 1（模型配置重构）已完整落地，AI 执行层、用量监控、Settings/Usage UI 全部实现。
+**Phase 1 免费版 MVP — 已交付**。Electron 桌面应用骨架完整，37 个 git 提交，37 条全过测试，全量 TypeScript 零错误。
 
-| 模块 | 完成度 | 状态 |
+旧 Web 架构代码已迁移至 `_legacy/` 目录隔离。
+
+## 完成度汇总
+
+| 模块 | 完成度 | 说明 |
 |------|--------|------|
-| Web 控制台骨架 | 100% | ✅ 8 个页面全部存在 |
-| 数据库层 | 100% | ✅ schema + queries 完整 |
-| Remote Agent | 90% | ✅ 进程管理 / 文件 I/O / Socket.IO 协议完整 |
-| CLI 编排脚本 | 100% | ✅ 7 个 shell 脚本 |
-| Prompt 模板 | 100% | ✅ 13 个写作角色模板 |
-| 模型配置 | 100% | ✅ 19 operation + 6 预设 + 8 provider 适配层 |
-| 用量监控 | 100% | ✅ 成本计算 + 预算告警 + dashboard + 失败快照 |
-| AI 辅助初始化 | 0% | ❌ 仅有手动 7 步向导 |
-| 测试 | 100% | ✅ 140 vitest 测试全通过（单元 + 集成 + E2E smoke） |
-| Docker 部署 | 80% | ✅ 本地可跑，远端挂载 CLI 待补 |
+| Monorepo 脚手架 | 100% | pnpm workspace + shared/prompts 包 |
+| 数据库层 | 100% | SQLite WAL + 全表 CRUD + 内联迁移 |
+| 文件存储 | 100% | FileStore — Markdown + YAML frontmatter |
+| AI Provider 层 | 100% | 5 Provider + Crypto + CostTracker + ModelManager |
+| Prompt 模板库 | 100% | 18 个模板函数（11 角色 + 3 管线 + 4 资料） |
+| Engine 层 | 95% | Pipeline + WritersRoom + LoreEngine 完整；编排连接预留 |
+| IPC 桥接层 | 100% | 7 域名 + contextBridge + 渲染端客户端 |
+| UI — 面板 | 100% | 四面板布局 + Navigator/Editor/Inspector/CommandBar |
+| UI — 设置 | 100% | 模型配置/测试连接/角色绑定/通用设置 |
+| UI — 向导 | 100% | 快速 5 步 + 高级 7 类 + AI 生成主角 |
+| UI — 管线 | 100% | 进度条/步骤追踪/AI 输出流/审阅清单 |
+| UI — 导出 | 90% | 对话框完整；实际导出逻辑待实现 |
+| UI — 状态管理 | 100% | 4 个 Zustand stores |
+| 键盘快捷键 | 100% | 14 个快捷键（Cmd+S/J/B/I/N/O/,/W 等） |
+| 动画过渡 | 100% | 面板过渡/页面切换/打字光标/Skeleton/Toast |
+| 单元测试 | 40% | 37 条通过；Engine/Store/AI/Provider 核心路径覆盖 |
+| E2E 测试 | 5% | 骨架就绪，待 Electron 运行环境 |
+| 打包配置 | 100% | electron-builder.yml — macOS/Windows/Linux |
 
 ---
 
 ## 已实现功能清单
 
-### Web 页面（`web-console/src/app/`）
+### 渲染进程（Renderer）
 
-| 页面 | 路径 | 完成度 | 说明 |
-|------|------|--------|------|
-| 仪表盘 | `/` | ✅ 完整 | Agent 状态、进程统计、项目初始化引导 |
-| 项目初始化向导 | `/project/new` | ✅ 手动模式完整 | 7 步向导 + 预填逻辑 |
-| 管线控制 | `/pipeline` | ✅ 完整 | 启动/状态/进度/token 展示 |
-| 设置 | `/settings` | ⚠️ UI 完整但后端断层 | 配置写入 `config` 表，无执行路径 |
-| 资料库 | `/lore` | 🟡 骨架 | 待实现：浏览/编辑/AI 扩充 |
-| 编剧室 | `/writers-room` | 🟡 骨架 | 待实现：角色任务分发可视化 |
-| 稿件 | `/manuscript` | 🟡 骨架 | 待实现：章节浏览 |
-| 检查点 | `/checkpoints` | 🟡 骨架 | 待实现：决策审阅 |
-| 终端 | `/terminal` | ✅ 完整 | xterm.js + Claude/Gemini pty |
+| 页面/组件 | 路径 | 完成度 |
+|-----------|------|--------|
+| App 路由 | `renderer/App.tsx` | ✅ 4 页路由（welcome/studio/settings-models/settings-general） |
+| Studio 布局 | `renderer/layouts/studio-layout.tsx` | ✅ 四面板 + 可拖拽分隔线 |
+| 导航面板 | `renderer/panels/navigator/` | ✅ 树形导航 + 4 分类 |
+| 编辑器面板 | `renderer/panels/editor/` | ✅ 写作/指挥/审阅三模式 + 工具栏 |
+| 查看器面板 | `renderer/panels/inspector/` | ✅ 上下文感知 + 章节卡片 |
+| 指令栏 | `renderer/panels/command-bar/` | ✅ Ctrl+J + 7 种 AI 指令 + 模糊搜索 |
+| 欢迎页 | `renderer/onboarding/welcome.tsx` | ✅ 快速/高级双入口 |
+| 快速向导 | `renderer/onboarding/quick-wizard.tsx` | ✅ 5 步（基本信息→AI→主角→世界观→大纲） |
+| 高级向导 | `renderer/onboarding/advanced-wizard.tsx` | ✅ 7 类（含配角/风格指南） |
+| 模型设置 | `renderer/settings/model-settings.tsx` | ✅ 列表/添加/删除/测试连接/角色绑定/通用设置 |
+| 管线监控 | `renderer/pipeline/monitor.tsx` | ✅ 进度条 + 步骤追踪 + AI 输出流 |
+| 检查点审阅 | `renderer/pipeline/checkpoint-review.tsx` | ✅ 6 维度审阅 + 决策 |
+| 导出 | `renderer/export/export-dialog.tsx` | ✅ 格式选择 UI（逻辑桩） |
+| 状态栏 | `renderer/components/status-bar.tsx` | ✅ 字数/章节/管线/视图切换/设置 |
 
-### API Routes（`web-console/src/app/api/`）
+### 主进程（Main Process）
 
-| 路径 | 方法 | 完成度 |
+| 模块 | 文件 | 完成度 |
 |------|------|--------|
-| `/api/health` | GET | ✅ |
-| `/api/config` | GET / PUT | ✅ |
-| `/api/pipeline/status` | GET | ✅ |
-| `/api/pipeline/start` | POST | ✅ |
-| `/api/project/status` | GET | ✅ |
-| `/api/project/init` | POST | ✅ |
+| 数据库连接 | `db/connection.ts` | ✅ 连接池 + WAL + 内联 SQL 迁移 |
+| 项目 CRUD | `db/queries/projects.ts` | ✅ |
+| 章节 CRUD | `db/queries/chapters.ts` | ✅ |
+| 资料 CRUD | `db/queries/lore.ts` | ✅ |
+| 管线查询 | `db/queries/pipeline.ts` | ✅ |
+| AI 日志 | `db/queries/ai-logs.ts` | ✅ |
+| 设置存取 | `db/queries/settings.ts` | ✅ |
+| Anthropic Provider | `ai/providers/anthropic.ts` | ✅ SDK + 实时定价 |
+| Google Provider | `ai/providers/google.ts` | ✅ GenAI SDK v0.24 |
+| OpenAI Provider | `ai/providers/openai.ts` | ✅ SDK v5 |
+| OpenAI Compatible | `ai/providers/openai-compatible.ts` | ✅ 可配置 baseURL |
+| AIClient | `ai/client.ts` | ✅ generate + generateStream |
+| API Key 加密 | `ai/crypto.ts` | ✅ AES-256-GCM（本地密钥） |
+| 成本追踪 | `ai/cost-tracker.ts` | ✅ 内存日志 |
+| 模型管理 | `ai/model-manager.ts` | ✅ CRUD + 绑定 + 默认降级 |
+| Pipeline 引擎 | `engine/pipeline.ts` | ✅ 状态机 + EventEmitter |
+| Writers' Room | `engine/writers-room.ts` | ✅ 4 阶段协作流程 |
+| Lore Engine | `engine/lore-engine.ts` | ✅ L0/L1/L2 上下文金字塔 |
+| FileStore | `store/file-store.ts` | ✅ 项目目录 I/O + Markdown |
+| IPC 上下文 | `ipc/context.ts` | ✅ 单例共享状态 |
+| 项目 IPC | `ipc/project.ipc.ts` | ✅ list/create/open/delete |
+| 章节 IPC | `ipc/chapter.ipc.ts` | ✅ list/get/getContent/save |
+| 资料 IPC | `ipc/lore.ipc.ts` | ✅ list/get/save |
+| 管线 IPC | `ipc/pipeline.ipc.ts` | ✅ start/pause/resume/stop/getState + 事件转发 |
+| AI IPC | `ipc/ai.ipc.ts` | ✅ testConnection/fetchModels/assist/streamAssist |
+| 原生 IPC | `ipc/native.ipc.ts` | ✅ 对话框/导出/设置存取 |
+| 窗口管理 | `window-manager.ts` | ✅ 1440x900 + DevTools |
 
-### Remote Agent（`remote-agent/src/`）
+### 包（Packages）
 
-| 文件 | 能力 | 完成度 |
-|------|------|--------|
-| `index.ts` | Socket.IO server + 事件路由 + 终端会话 | ✅ |
-| `process-manager.ts` | 子进程生命周期 + 并发限制 + token 聚合 | ✅ |
-| `types.ts` | 客户端/服务端事件类型定义 | ✅ |
-
-### 数据库（`web-console/src/lib/db/schema.ts`）
-
-| 表 | 用途 | 完成度 |
-|------|------|--------|
-| `config` | kv 配置（API keys、URL、其他） | ✅ |
-| `processes` | 进程记录 + 每进程 token 统计 | ✅ |
-| `token_usage` | 细粒度 token 记录（per process） | ✅ |
-| `events` | 系统事件流 | ✅ |
-
-### 已存在的 Prompt 模板（`prompts/`）
-
-```
-prompts/
-├── lore/
-│   ├── generate-summary.md
-│   └── refresh-context.md
-├── review/
-│   ├── continuity.md
-│   └── critic.md
-├── showrunner/
-│   ├── create-brief.md
-│   └── decide.md
-└── writers/
-    ├── architect.md
-    ├── atmosphere.md
-    ├── character-advocate.md
-    ├── final-revise.md
-    ├── foreshadow-weaver.md
-    ├── main-writer.md
-    └── revise.md
-```
-
-### 已有 Shell 脚本（`scripts/`）
-
-| 脚本 | 用途 |
-|------|------|
-| `init-project.sh` | 项目目录初始化（与 Web 向导功能重叠） |
-| `showrunner.sh` | 管线主循环 |
-| `writers-room.sh` | 多角色协作产章 |
-| `lore-update.sh` | 上下文刷新 |
-| `checkpoint.sh` | 检查点审阅 |
-| `status.sh` | 状态查询 |
-| `start-agent.sh` | Agent 启动脚本 |
+| 包 | 文件数 | 完成度 |
+|----|--------|--------|
+| `@novelforge/shared` | 10 类型文件 + constants | ✅ 全类型定义 |
+| `@novelforge/prompts` | 19 个模板函数 | ✅ 编剧室全角色 + 管线 + 资料维护 |
 
 ---
 
-## 关键缺口
+## 已知缺口
 
-### 1. UI ↔ 执行层断层（最大缺口）
-Settings 页面允许配置 OpenAI / DeepSeek 的 `apiBase` 和 `apiKeyConfigKey`，**但代码库从未实际 `fetch` 过它们**。所有真正的 AI 调用都走 `spawn('claude'|'gemini')` CLI。需要补齐 Provider 适配层。
+### 关键（阻塞生产使用）
 
-### 2. 无 "操作 → 模型" 映射
-当前只有"按 provider 配置"，无"哪个操作用哪个模型"的抽象。`config/agents.yaml` 有 role → model 硬编码，但 CLI 调用时 model 字段被忽略（CLI 用用户本机 `~/.claude` 配置）。
+1. **Pipeline → WritersRoom → LoreEngine 编排连接**：Pipeline 启动后不会实际调用写作流程
+2. **导出逻辑未实现**：`native:export` 返回空桩，EPUB/TXT/DOCX/PDF 均无输出
+3. **API Key 加密为本地密钥**：`crypto.ts` 使用硬编码 scryptSync，非 OS 密钥链
 
-### 3. 无成本计算
-`token_usage` 表有 token 数，但无每模型单价表，无法算出花了多少钱。切到 API Key 模式后这是严重问题。
+### 中等
 
-### 4. 无用量 Dashboard
-管线页只显示一个总 token 数。缺按操作 / 按模型 / 按时间的拆分视图。
+4. **AI 日志未持久化**：`CostTracker` 仅内存记录，`ai_call_logs` 表空置
+5. **自动保存未生效**：`settings-store.ts` 有 `autoSaveIntervalMs` 但无定时器
+6. **角色绑定未持久化**：`role-binding.tsx` 仅更新本地 React 状态
+7. **`sandbox: false`**：可升级为 `sandbox: true`
 
-### 5. AI 初始化为 0
-所有 AI 辅助构思能力（世界观、角色、大纲、风格）完全缺失，用户只能纯手工填写。
+### 低
 
-### 6. 子页面骨架
-资料库 / 编剧室 / 稿件 / 检查点四个页面仅有占位，无实际交互。
-
-### 7. 无测试
-0 条自动化测试。完全依赖手动 e2e。
+8. **`camelToSnake` 重复**：3 个 query 文件各定义一次
+9. **ESLint/Prettier 配置缺失**：依赖已安装但无配置文件
+10. **IPC 类型安全**：渲染端通过 `(window as any).novelforge` 或 Proxy 访问，无 IDE 提示
 
 ---
 
-## 已知技术债
+## 测试覆盖明细
 
-| 项 | 描述 | 优先级 |
-|----|------|--------|
-| `project.yaml` title 为空时的 status 判定 | 现用字符串比较 `status !== 'initializing'`，易错 | 低 |
-| `scripts/init-project.sh` vs Web 向导重叠 | 两套初始化流程，需要决定主推哪个 | 中 |
-| `process-manager.ts` 的 `spawn` 不传 model 参数 | CLI 调用时 model 字段被忽略 | 高（Feature 1 会修） |
-| Settings 页的 `DEFAULT_PROVIDERS` 数组硬编码 | 添加新 provider 需要改代码 | 中 |
-| 无 rate limit 执行 | 配置有 `rate_limit_rpm` 字段但无代码使用 | 中 |
+| 测试文件 | 数量 | 状态 |
+|----------|------|------|
+| `tests/unit/ai/providers.test.ts` | 6 | ✅ |
+| `tests/unit/engine/pipeline.test.ts` | 12 | ✅ |
+| `tests/unit/prompts/architect.test.ts` | 6 | ✅ |
+| `tests/unit/store/file-store.test.ts` | 13 | ✅ |
+| `tests/e2e/full-flow.spec.ts` | 1 (骨架) | 🟡 |
+| **合计** | **37** | |
+
+待补充：
+- WritersRoom / LoreEngine / AIClient / CostTracker 单元测试
+- Zustand stores 测试
+- IPC 处理函数集成测试
+- 完整 E2E（需 Electron 运行环境）
 
 ---
 
 ## 参考文档
 
-- 设计规范：[`superpowers/specs/2026-04-09-development-standards-design.md`](./superpowers/specs/2026-04-09-development-standards-design.md)
-- 小说引擎设计：[`superpowers/specs/2026-04-09-novel-engine-design.md`](./superpowers/specs/2026-04-09-novel-engine-design.md)
-- Web 控制台设计：[`superpowers/specs/2026-04-09-web-console-design.md`](./superpowers/specs/2026-04-09-web-console-design.md)
-- 历史 Phase 1-7 实施计划：[`superpowers/plans/archive/2026-04-09-novelforge-implementation.md`](./superpowers/plans/archive/2026-04-09-novelforge-implementation.md)
+- 设计规范：[`superpowers/specs/2026-04-27-novelforge-desktop-rewrite-design.md`](./superpowers/specs/2026-04-27-novelforge-desktop-rewrite-design.md)
+- 实施计划：[`superpowers/plans/2026-04-27-novelforge-desktop-rewrite.md`](./superpowers/plans/2026-04-27-novelforge-desktop-rewrite.md)
+- 路线图：[`ROADMAP.md`](./ROADMAP.md)
+- 旧架构设计（已废弃）：
+  - [`superpowers/specs/2026-04-09-novel-engine-design.md`](./superpowers/specs/2026-04-09-novel-engine-design.md)
+  - [`superpowers/specs/2026-04-09-web-console-design.md`](./superpowers/specs/2026-04-09-web-console-design.md)

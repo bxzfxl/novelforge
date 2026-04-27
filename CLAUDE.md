@@ -1,73 +1,159 @@
-# NovelForge - AI 小说工程化写作系统
+# NovelForge — AI 小说工程化写作系统
 
 ## 项目概述
 
-NovelForge 是一个 AI 驱动的小说工程化写作系统，采用"编剧室 + 制片人"模式（Writers' Room + Showrunner），通过多 Agent 协作全自动生成百万字级网文长篇小说。
+NovelForge 是一个 **Electron 桌面应用**，采用"编剧室 + 制片人"模式（Writers' Room + Showrunner），通过多 Agent 协作全自动生成百万字级网文长篇小说。用户自带 API Key，直接在本地调用 AI 服务。
 
 ## 架构
 
-- **Web 控制台**：Next.js 15 (App Router) + shadcn/ui + Tailwind CSS，可视化操作整个工作流
-- **Remote Agent**：Node.js 服务，通过 node-pty 管理 Claude CLI / Gemini CLI 进程
-- **小说引擎**：Shell 脚本 + Prompt 模板，编排编剧室多角色协作流程
-- **通信**：Web ↔ Agent 通过 Socket.IO WebSocket
-- **数据库**：SQLite (better-sqlite3)
-
-## 开发环境
-
-- 本地开发：`claude --chrome` 实现自动 UI 测试
-- 部署环境：Docker 部署到远程服务器
-- CLI 认证：使用 OAuth 登录（`claude auth login` / `gemini auth login`），不使用 API Key
+- **Electron 34** 桌面壳（Main Process + Preload + Renderer Process）
+- **Renderer**：React 19 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui
+- **Main Process**：TypeScript 编译为 CJS，管理数据库、文件 I/O、AI 调用、IPC 路由
+- **Preload**：`contextBridge.exposeInMainWorld` 暴露类型安全的 `window.novelforge` API
+- **AI 层**：5 个 Provider（Anthropic SDK / Google GenAI SDK / OpenAI SDK / OpenAI Compatible / Custom HTTP）+ AES-256-GCM 本地加密
+- **引擎层**：Pipeline 状态机 + Writers' Room 调度器（Architect→Writer→Critic+Continuity→Revise）+ 四级上下文金字塔
+- **数据库**：SQLite (better-sqlite3)，WAL 模式
+- **文件存储**：Markdown + YAML frontmatter 章节文件
+- **包管理**：pnpm monorepo（`apps/desktop` + `packages/shared` + `packages/prompts`）
 
 ## 目录结构
 
 ```
-paperProject/
-├── web-console/          # Next.js Web 控制台
-├── remote-agent/         # CLI 进程管理服务
-├── config/               # 项目配置（agents、pipeline、models）
-├── lore/                 # 资料中台（世界观、角色、风格、上下文层）
-├── outline/              # 情节规划（大纲、故事线、伏笔）
-├── manuscript/           # 成稿
-├── workspace/            # 编剧室工作区
-├── checkpoints/          # 人类审阅检查点
-├── scripts/              # 编排脚本
-├── prompts/              # Prompt 模板库
-└── docs/                 # 设计文档与实施计划
+novelforge/
+├── apps/desktop/           # Electron 桌面应用
+│   ├── src/
+│   │   ├── main/           # 主进程
+│   │   │   ├── index.ts        # 应用入口
+│   │   │   ├── window-manager.ts
+│   │   │   ├── ai/             # AI Provider 层
+│   │   │   │   ├── client.ts
+│   │   │   │   ├── crypto.ts
+│   │   │   │   ├── cost-tracker.ts
+│   │   │   │   ├── model-manager.ts
+│   │   │   │   └── providers/  # Anthropic/Google/OpenAI/OpenAI-Compatible
+│   │   │   ├── db/             # 数据库层
+│   │   │   │   ├── connection.ts
+│   │   │   │   ├── migrations/ # SQL 迁移（内联到源码）
+│   │   │   │   └── queries/    # CRUD 操作
+│   │   │   ├── engine/         # 小说引擎
+│   │   │   │   ├── pipeline.ts     # 管线状态机
+│   │   │   │   ├── writers-room.ts # 编剧室调度器
+│   │   │   │   └── lore-engine.ts  # 资料引擎
+│   │   │   ├── ipc/            # IPC 处理器
+│   │   │   │   ├── context.ts      # 共享上下文
+│   │   │   │   ├── project.ipc.ts
+│   │   │   │   ├── chapter.ipc.ts
+│   │   │   │   ├── lore.ipc.ts
+│   │   │   │   ├── pipeline.ipc.ts
+│   │   │   │   ├── ai.ipc.ts
+│   │   │   │   └── native.ipc.ts
+│   │   │   └── store/          # FileStore（Markdown I/O）
+│   │   ├── preload/        # contextBridge 预加载
+│   │   │   └── index.ts
+│   │   └── renderer/       # 渲染进程（React UI）
+│   │       ├── index.html
+│   │       ├── main.tsx
+│   │       ├── App.tsx         # 页面路由
+│   │       ├── lib/
+│   │       ├── stores/         # Zustand stores
+│   │       ├── layouts/        # 四面板 Studio 布局
+│   │       ├── panels/         # Navigator/Editor/Inspector/CommandBar
+│   │       ├── settings/       # 设置页（模型/角色绑定/通用）
+│   │       ├── onboarding/     # 项目初始化向导
+│   │       ├── pipeline/       # 管线监控 + 检查点审阅
+│   │       ├── export/         # 导出对话框
+│   │       ├── components/     # 通用组件（StatusBar/ui）
+│   │       ├── hooks/          # useShortcuts 等
+│   │       └── styles/         # globals.css + 动画
+│   ├── scripts/            # 开发脚本
+│   │   ├── dev-main.ts         # Electron 开发启动
+│   │   └── dev-bootstrap.js    # tsx 引导加载器
+│   ├── tests/              # 测试
+│   │   ├── unit/
+│   │   │   ├── ai/providers.test.ts
+│   │   │   ├── engine/pipeline.test.ts
+│   │   │   ├── prompts/architect.test.ts
+│   │   │   └── store/file-store.test.ts
+│   │   └── e2e/
+│   │       └── full-flow.spec.ts
+│   ├── resources/          # 应用图标
+│   ├── electron-builder.yml
+│   └── package.json
+├── packages/
+│   ├── shared/             # @novelforge/shared — 类型定义
+│   │   └── src/
+│   │       ├── types/
+│   │       │   ├── project.ts
+│   │       │   ├── chapter.ts
+│   │       │   ├── lore.ts
+│   │       │   ├── ai.ts
+│   │       │   ├── pipeline.ts
+│   │       │   └── settings.ts
+│   │       └── constants.ts
+│   └── prompts/            # @novelforge/prompts — Prompt 模板库
+│       └── src/
+│           ├── roles/      # 编剧室角色模板（11 个）
+│           ├── pipeline/   # 管线模板（3 个）
+│           ├── lore/       # 资料维护模板（4 个）
+│           └── system-prompts.ts
+├── _legacy/                # 旧 Web 架构代码（已废弃，参考用）
+├── docs/                   # 设计文档与实施计划
+│   ├── STATUS.md
+│   ├── ROADMAP.md
+│   └── superpowers/
+│       ├── specs/          # 设计规范
+│       └── plans/          # 实施计划
+└── pnpm-workspace.yaml
 ```
 
 ## 关键设计文档
 
-- `docs/superpowers/specs/2026-04-09-novel-engine-design.md` — 小说引擎核心设计
-- `docs/superpowers/specs/2026-04-09-web-console-design.md` — Web 控制台设计
-- `docs/superpowers/plans/2026-04-09-novelforge-implementation.md` — 分阶段实施计划
+- `docs/superpowers/specs/2026-04-27-novelforge-desktop-rewrite-design.md` — 桌面应用设计规范
+- `docs/superpowers/plans/2026-04-27-novelforge-desktop-rewrite.md` — 实施计划（7 Group，37 提交）
+- `docs/STATUS.md` — 当前实现状态
+- `docs/ROADMAP.md` — 路线图
 
 ## 开发命令
 
 ```bash
-# 开发
-pnpm dev           # 启动 Next.js 开发服务器
-pnpm dev:agent     # 启动 Remote Agent
+# 安装依赖
+pnpm install
+
+# 开发（Vite HMR + Electron 主进程）
+cd apps/desktop && pnpm dev
+
+# 类型检查
+pnpm typecheck              # Renderer
+pnpm -C apps/desktop typecheck   # 全部
+npx tsc --noEmit -p apps/desktop/tsconfig.main.json  # Main Process
+
+# 测试
+npx vitest run --config apps/desktop/vitest.config.ts
 
 # 构建
-pnpm build         # 构建 Next.js
-pnpm build:agent   # 构建 Remote Agent
-
-# 部署
-docker compose up -d --build
-
-# 小说引擎
-bash scripts/init-project.sh     # 初始化小说项目
-bash scripts/showrunner.sh       # 启动制片人管线
-bash scripts/status.sh           # 查看状态
+pnpm -C apps/desktop build              # Vite + tsc 编译
+pnpm -C apps/desktop build:desktop      # 构建 + electron-builder 打包
 ```
+
+## 测试覆盖
+
+| 模块 | 测试数 | 文件 |
+|------|--------|------|
+| PipelineEngine | 12 | `tests/unit/engine/pipeline.test.ts` |
+| FileStore | 13 | `tests/unit/store/file-store.test.ts` |
+| Provider 工厂 | 6 | `tests/unit/ai/providers.test.ts` |
+| Prompt 模板 | 6 | `tests/unit/prompts/architect.test.ts` |
+| E2E | 骨架 | `tests/e2e/full-flow.spec.ts` |
+| **合计** | **37** | |
 
 ## 开发规范
 
-- 使用 pnpm monorepo
+- pnpm monorepo
 - TypeScript strict mode
-- 组件使用 shadcn/ui
-- 状态管理使用 Zustand
-- 实时通信使用 Socket.IO
-- CLI 控制使用 node-pty
+- UI 组件使用 shadcn/ui + Radix primitives
+- 状态管理使用 Zustand 5.x
+- IPC 使用 contextBridge + ipcRenderer.invoke
+- API Key 加密使用 AES-256-GCM（本地密钥）
 - 代码注释使用简体中文
 - Commit 格式：`<type>(scope): <summary>`
+- 函数 ≤ 50 行、文件 ≤ 300 行
