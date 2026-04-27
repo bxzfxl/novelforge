@@ -51,7 +51,7 @@ export function StudioLayout({ onOpenSettings }: StudioLayoutProps) {
         {/* Left Panel: Navigation */}
         <div
           style={{ width: leftWidth }}
-          className="flex-shrink-0 border-r border-nf-border overflow-hidden"
+          className="flex-shrink-0 border-r border-nf-border overflow-hidden transition-all duration-200 ease-out"
         >
           <NavigationPanel />
         </div>
@@ -76,7 +76,7 @@ export function StudioLayout({ onOpenSettings }: StudioLayoutProps) {
         {/* Right: Inspector */}
         <div
           style={{ width: rightWidth }}
-          className="flex-shrink-0 border-l border-nf-border overflow-hidden"
+          className="flex-shrink-0 border-l border-nf-border overflow-hidden transition-all duration-200 ease-out"
         >
           <InspectorPanel viewMode={viewMode} />
         </div>

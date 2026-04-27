@@ -25,3 +25,30 @@ html, body, #root {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-nf-border); border-radius: 3px; }
+
+/* 打字光标动画 */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.typing-cursor::after {
+  content: '▊';
+  animation: blink-cursor 0.8s step-end infinite;
+  color: theme('colors.amber.400');
+}
+
+/* 骨架屏加载 */
+.skeleton {
+  @apply animate-pulse rounded-md bg-zinc-800;
+}
+
+/* Toast 通知滑入 */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-enter {
+  animation: slide-in-right 0.3s ease-out;
+}
