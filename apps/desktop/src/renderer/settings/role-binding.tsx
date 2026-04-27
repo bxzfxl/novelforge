@@ -45,12 +45,12 @@ export function RoleBinding() {
               <div className="text-sm text-zinc-300">{ROLE_LABELS[role] || role}</div>
               <div className="text-xs text-zinc-600">{role}</div>
             </div>
-            <Select value={bindings[role] || ''} onValueChange={v => handleChange(role, v)}>
+            <Select value={bindings[role] || '__none__'} onValueChange={v => handleChange(role, v === '__none__' ? '' : v)}>
               <SelectTrigger className="flex-1 bg-zinc-950 border-zinc-700 text-zinc-200">
                 <SelectValue placeholder="未分配 (使用 Fallback)" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700">
-                <SelectItem value="">未分配</SelectItem>
+                <SelectItem value="__none__">未分配</SelectItem>
                 {models.map(m => (
                   <SelectItem key={m.id} value={m.id}>{m.displayName} ({m.modelId})</SelectItem>
                 ))}

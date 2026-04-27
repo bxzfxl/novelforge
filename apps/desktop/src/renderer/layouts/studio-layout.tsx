@@ -9,6 +9,7 @@ export type ViewMode = 'writing' | 'command' | 'review'
 
 interface StudioLayoutProps {
   onOpenSettings?: () => void
+  onOpenExport?: () => void
 }
 
 export function StudioLayout({ onOpenSettings }: StudioLayoutProps) {

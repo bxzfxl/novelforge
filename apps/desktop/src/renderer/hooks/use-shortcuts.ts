@@ -7,8 +7,9 @@ interface ShortcutMap {
 export function useShortcuts(shortcuts: ShortcutMap) {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
+      if (!e.key) return
       const mod = e.metaKey || e.ctrlKey
-      const key = `${mod ? 'Cmd+' : ''}${e.shiftKey ? 'Shift+' : ''}${e.key.toLowerCase()}`
+      const key = `${mod ? 'cmd+' : ''}${e.shiftKey ? 'shift+' : ''}${e.key.toLowerCase()}`
 
       if (key === 'cmd+s') { e.preventDefault(); (shortcuts.save as () => void)?.() }
       if (key === 'cmd+j') { e.preventDefault(); (shortcuts.aiCommand as () => void)?.() }

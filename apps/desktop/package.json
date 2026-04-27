@@ -12,8 +12,12 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@novelforge/shared": "workspace:*",
+    "@novelforge/prompts": "workspace:*",
     "@anthropic-ai/sdk": "^0.50.0",
     "@google/generative-ai": "^0.24.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-scroll-area": "^1.2.10",

@@ -1,6 +1,6 @@
 # NovelForge 项目状态快照
 
-> **最后更新**：2026-04-27
+> **最后更新**：2026-04-27（浏览器 UI 测试后更新）
 > 本文件描述项目当前实现状态。路线图见 [`ROADMAP.md`](./ROADMAP.md)。
 
 ## 整体状态
@@ -8,6 +8,8 @@
 **Phase 1 免费版 MVP — 已交付**。Electron 桌面应用骨架完整，37 个 git 提交，37 条全过测试，全量 TypeScript 零错误。
 
 旧 Web 架构代码已迁移至 `_legacy/` 目录隔离。
+
+> **2026-04-27 浏览器 UI 测试**：通过 Vite dev server + Chrome 自动化对全部 8 个测试项逐项验证，发现并修复 5 个运行时 Bug（详见下方"缺陷修复记录"）。
 
 ## 完成度汇总
 
@@ -24,9 +26,9 @@
 | UI — 设置 | 100% | 模型配置/测试连接/角色绑定/通用设置 |
 | UI — 向导 | 100% | 快速 5 步 + 高级 7 类 + AI 生成主角 |
 | UI — 管线 | 100% | 进度条/步骤追踪/AI 输出流/审阅清单 |
-| UI — 导出 | 90% | 对话框完整；实际导出逻辑待实现 |
+| UI — 导出 | 95% | 对话框已集成到 App.tsx + 快捷键注册；实际导出逻辑待实现 |
 | UI — 状态管理 | 100% | 4 个 Zustand stores |
-| 键盘快捷键 | 100% | 14 个快捷键（Cmd+S/J/B/I/N/O/,/W 等） |
+| 键盘快捷键 | 100% | 14 个快捷键（Cmd+S/J/B/I/N/O/,/W 等）；已修复大小写匹配 Bug |
 | 动画过渡 | 100% | 面板过渡/页面切换/打字光标/Skeleton/Toast |
 | 单元测试 | 40% | 37 条通过；Engine/Store/AI/Provider 核心路径覆盖 |
 | E2E 测试 | 5% | 骨架就绪，待 Electron 运行环境 |
@@ -96,6 +98,20 @@
 
 ---
 
+## 缺陷修复记录
+
+### 2026-04-27 浏览器 UI 测试修复（5 个）
+
+| 文件 | Bug | 修复 |
+|------|-----|------|
+| `hooks/use-shortcuts.ts` | `e.key` 为 undefined 时 `.toLowerCase()` 抛出异常 | 加 `if (!e.key) return` 守卫 |
+| `hooks/use-shortcuts.ts` | 键名拼接 `Cmd+/Shift+` 大写，但比较用 `cmd+/shift+` 小写，**所有快捷键失效** | 改为全小写 |
+| `lib/ipc-client.ts` | 非 Electron 环境直接 throw，设置页等所有 IPC 调用触发 React 崩溃 | 改为 noop proxy 降级，返回空数据 |
+| `settings/role-binding.tsx` | `<SelectItem value="">` 违反 Radix UI 约束，致角色绑定 Tab 黑屏 | 改为 `value="__none__"` |
+| `App.tsx` | `ExportDialog` 存在但未被引入，导出功能和快捷键完全缺失 | 集成到 App.tsx 并注册 `Cmd+Shift+E` |
+
+---
+
 ## 已知缺口
 
 ### 关键（阻塞生产使用）
@@ -108,14 +124,16 @@
 
 4. **AI 日志未持久化**：`CostTracker` 仅内存记录，`ai_call_logs` 表空置
 5. **自动保存未生效**：`settings-store.ts` 有 `autoSaveIntervalMs` 但无定时器
-6. **角色绑定未持久化**：`role-binding.tsx` 仅更新本地 React 状态
-7. **`sandbox: false`**：可升级为 `sandbox: true`
+6. **角色绑定未持久化**：`role-binding.tsx` 仅更新本地 React 状态，未调用 IPC 保存
+7. **编辑器"开始写作..."为实际内容非占位符**：新章节默认内容会与用户输入混入
+8. **Inspector 字数不实时同步**：仅显示已保存字数，不反映编辑器当前内容
+9. **`sandbox: false`**：可升级为 `sandbox: true`
 
 ### 低
 
-8. **`camelToSnake` 重复**：3 个 query 文件各定义一次
-9. **ESLint/Prettier 配置缺失**：依赖已安装但无配置文件
-10. **IPC 类型安全**：渲染端通过 `(window as any).novelforge` 或 Proxy 访问，无 IDE 提示
+10. **`camelToSnake` 重复**：3 个 query 文件各定义一次
+11. **ESLint/Prettier 配置缺失**：依赖已安装但无配置文件
+12. **IPC 类型安全**：渲染端通过 `(window as any).novelforge` 或 Proxy 访问，无 IDE 提示
 
 ---
 
