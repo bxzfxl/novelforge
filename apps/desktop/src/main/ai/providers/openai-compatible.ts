@@ -1,21 +1,72 @@
+import OpenAI from 'openai'
 import type { ModelConfig, AIChatProvider, ChatResult, StreamChunk } from '@novelforge/shared'
+import { decryptApiKey } from '../crypto'
 
 export class OpenAICompatibleProvider implements AIChatProvider {
-  constructor(private config: ModelConfig) {}
+  private client: OpenAI
 
-  async chat(_messages: Array<{ role: string; content: string }>, _opts: any): Promise<ChatResult> {
-    throw new Error('OpenAICompatibleProvider not yet implemented')
+  constructor(private config: ModelConfig) {
+    this.client = new OpenAI({
+      apiKey: decryptApiKey(config.apiKey),
+      baseURL: config.baseURL ?? 'https://api.openai.com/v1',
+    })
   }
 
-  async *chatStream(_messages: Array<{ role: string; content: string }>, _opts: any): AsyncIterable<StreamChunk> {
-    throw new Error('OpenAICompatibleProvider stream not yet implemented')
+  async chat(messages: Array<{ role: string; content: string }>, opts: {
+    model?: string; maxTokens?: number; temperature?: number; signal?: AbortSignal
+  }): Promise<ChatResult> {
+    const start = Date.now()
+    const resp = await this.client.chat.completions.create({
+      model: opts.model ?? this.config.modelId,
+      max_tokens: opts.maxTokens ?? this.config.maxTokens ?? 16000,
+      temperature: opts.temperature ?? 0.7,
+      messages: messages.map(m => ({ role: m.role as 'system' | 'user' | 'assistant', content: m.content })),
+    }, { signal: opts.signal })
+
+    return {
+      content: resp.choices[0]?.message?.content ?? '',
+      inputTokens: resp.usage?.prompt_tokens ?? 0,
+      outputTokens: resp.usage?.completion_tokens ?? 0,
+      costUsd: 0,
+      durationMs: Date.now() - start,
+    }
   }
 
-  async models(): Promise<Array<{ id: string; name: string }>> {
-    return []
+  async *chatStream(messages: Array<{ role: string; content: string }>, opts: {
+    model?: string; maxTokens?: number; temperature?: number; signal?: AbortSignal
+  }): AsyncIterable<StreamChunk> {
+    const stream = await this.client.chat.completions.create({
+      model: opts.model ?? this.config.modelId,
+      max_tokens: opts.maxTokens ?? this.config.maxTokens ?? 16000,
+      temperature: opts.temperature ?? 0.7,
+      messages: messages.map(m => ({ role: m.role as 'system' | 'user' | 'assistant', content: m.content })),
+      stream: true,
+    }, { signal: opts.signal })
+
+    let content = ''
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content ?? ''
+      content += delta
+      yield { type: 'text', content: delta }
+    }
+    yield { type: 'done', inputTokens: 0, outputTokens: Math.ceil(content.length / 4), costUsd: 0 }
   }
 
-  async validate(): Promise<{ valid: boolean; error?: string }> {
-    return { valid: true }
+  async models() {
+    try {
+      const resp = await this.client.models.list()
+      return resp.data.map(m => ({ id: m.id, name: m.id }))
+    } catch {
+      return []
+    }
+  }
+
+  async validate() {
+    try {
+      await this.client.models.list()
+      return { valid: true }
+    } catch (e: any) {
+      return { valid: false, error: e.message }
+    }
   }
 }
