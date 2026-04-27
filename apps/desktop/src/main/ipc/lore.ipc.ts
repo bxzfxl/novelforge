@@ -1,13 +1,14 @@
 import { ipcMain } from 'electron'
+import type { LoreCategory } from '@novelforge/shared'
 import { FileStore } from '../store/file-store'
+import { listLoreEntries } from '../db/queries/lore'
 import { ctx } from './context'
 
 export function registerLoreIpc(): void {
-  ipcMain.handle('lore:list', async (_event, projectName: string, category: string) => {
+  ipcMain.handle('lore:list', async (_event, projectName: string, category?: LoreCategory) => {
     const db = ctx.databases.get(projectName)
     if (!db) return []
-    const { listLoreEntries } = require('../db/queries/lore')
-    return listLoreEntries(db, category)
+    return listLoreEntries(db, projectName, category)
   })
 
   ipcMain.handle('lore:get', async (_event, projectName: string, category: string, key: string) => {

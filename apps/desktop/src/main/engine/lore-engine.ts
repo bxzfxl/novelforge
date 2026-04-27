@@ -1,5 +1,5 @@
 import type { ContextLayer } from '@novelforge/shared'
-import { summaryPrompt, refreshContextPrompt } from '@novelforge/prompts'
+import { summaryPrompt, refreshContextPrompt, updateCharacterPrompt } from '@novelforge/prompts'
 import { v4 as uuid } from 'uuid'
 import type { AIClient } from '../ai/client'
 import type { ModelManager } from '../ai/model-manager'
@@ -124,7 +124,6 @@ export class LoreEngine {
       const profile = this.fileStore.readLoreFile('characters', charId)
       if (!profile) continue
 
-      const { updateCharacterPrompt } = require('@novelforge/prompts')
       const prompt = updateCharacterPrompt({
         characterProfile: profile,
         chapterSummary: opts.chapterSummary,
