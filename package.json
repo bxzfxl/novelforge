@@ -1,0 +1,26 @@
+{
+  "name": "novelforge",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @novelforge/desktop dev",
+    "dev:debug": "pnpm --filter @novelforge/desktop dev:debug",
+    "build": "pnpm --filter @novelforge/desktop build",
+    "build:desktop": "pnpm --filter @novelforge/desktop build:desktop",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "pnpm --filter @novelforge/desktop test:e2e",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

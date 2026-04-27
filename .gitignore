@@ -1,12 +1,10 @@
 node_modules/
-.next/
 dist/
-*.db
-*.db-shm
-*.db-wal
+out/
 .env
-.env.local
+*.db
+*.db-journal
+*.db-wal
 .DS_Store
-/tmp/
+Thumbs.db
 *.log
-.superpowers/
