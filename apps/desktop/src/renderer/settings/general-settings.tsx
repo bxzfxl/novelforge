@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { api } from '@/lib/ipc-client'
 
 export function GeneralSettings() {
@@ -65,6 +66,28 @@ export function GeneralSettings() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+    </div>
+  )
+}
+
+interface GeneralSettingsPageProps {
+  onBack?: () => void
+}
+
+export function GeneralSettingsPage({ onBack }: GeneralSettingsPageProps) {
+  return (
+    <div className="h-screen flex flex-col bg-nf-bg text-nf-text">
+      <div className="flex items-center gap-4 px-6 py-4 border-b border-nf-border">
+        {onBack && (
+          <Button variant="ghost" size="sm" onClick={onBack}>← 返回</Button>
+        )}
+        <h1 className="text-lg font-semibold text-zinc-200">通用设置</h1>
+      </div>
+      <div className="flex-1 overflow-auto p-6">
+        <div className="max-w-3xl mx-auto">
+          <GeneralSettings />
+        </div>
       </div>
     </div>
   )
