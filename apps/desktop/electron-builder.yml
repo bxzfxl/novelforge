@@ -1,0 +1,27 @@
+appId: com.novelforge.desktop
+productName: NovelForge
+directories:
+  output: release
+
+mac:
+  category: public.app-category.productivity
+  target:
+    - dmg
+  icon: resources/icon.icns
+  hardenedRuntime: true
+
+win:
+  target:
+    - nsis
+  icon: resources/icon.ico
+
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: resources/icon.png
+  category: Office
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
