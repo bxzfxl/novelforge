@@ -17,7 +17,7 @@ export class LoreEngine {
     private aiClient: AIClient,
     private modelManager: ModelManager,
     private fileStore: FileStore,
-    private db: Database
+    private db: Database.Database
   ) {}
 
   async afterChapter(opts: {

@@ -2,7 +2,7 @@ import Database from 'better-sqlite3'
 import { v4 as uuid } from 'uuid'
 import type { LoreEntry, LoreCategory, ContextLayer } from '@novelforge/shared'
 
-export function createLoreEntry(db: Database.Database, data: Omit<LoreEntry, 'id'>): LoreEntry {
+export function createLoreEntry(db: Database.Database, data: Omit<LoreEntry, 'id' | 'updatedAt'>): LoreEntry {
   const id = uuid()
   db.prepare(`
     INSERT INTO lore_entries (id, project_id, category, key, title, content, auto_generated)

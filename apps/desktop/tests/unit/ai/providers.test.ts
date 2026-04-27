@@ -7,13 +7,14 @@ vi.mock('@/main/ai/crypto', () => ({
   encryptApiKey: (key: string) => key,
 }))
 
-// Mock missing @google/genai package so the Google provider module can load
-vi.mock('@google/genai', () => ({
-  GoogleGenAI: class MockGoogleGenAI {
-    constructor(_opts: Record<string, unknown>) {}
+// Mock @google/generative-ai to avoid runtime dependency
+vi.mock('@google/generative-ai', () => ({
+  GoogleGenerativeAI: class MockGoogleGenerativeAI {
+    constructor(_apiKey: string) {}
     getGenerativeModel() {
       return {
         generateContent: async () => ({ response: { text: () => '' } }),
+        generateContentStream: async () => ({ stream: (async function* () {})() }),
       }
     }
   },

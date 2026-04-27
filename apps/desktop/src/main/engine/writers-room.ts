@@ -19,7 +19,7 @@ export class WritersRoom {
     private aiClient: AIClient,
     private modelManager: ModelManager,
     private fileStore: FileStore,
-    private db: Database
+    private db: Database.Database
   ) {}
 
   private async callRole(

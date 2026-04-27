@@ -1,12 +1,12 @@
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { ModelConfig, AIChatProvider, ChatResult, StreamChunk } from '@novelforge/shared'
 import { decryptApiKey } from '../crypto'
 
 export class GoogleProvider implements AIChatProvider {
-  private client: GoogleGenAI
+  private client: GoogleGenerativeAI
 
   constructor(private config: ModelConfig) {
-    this.client = new GoogleGenAI({ apiKey: decryptApiKey(config.apiKey) })
+    this.client = new GoogleGenerativeAI(decryptApiKey(config.apiKey))
   }
 
   async chat(messages: Array<{ role: string; content: string }>, opts: {
@@ -26,9 +26,9 @@ export class GoogleProvider implements AIChatProvider {
       parts: [{ text: m.content }],
     }))
 
-    const resp = await model.generateContent({ contents })
+    const result = await model.generateContent({ contents })
+    const text = result.response.text()
 
-    const text = resp.response?.text() ?? ''
     return {
       content: text,
       inputTokens: 0,
@@ -43,17 +43,22 @@ export class GoogleProvider implements AIChatProvider {
   }): AsyncIterable<StreamChunk> {
     const model = this.client.getGenerativeModel({
       model: opts.model ?? this.config.modelId,
+      generationConfig: {
+        maxOutputTokens: opts.maxTokens ?? this.config.maxTokens ?? 16000,
+        temperature: opts.temperature ?? 0.7,
+      },
     })
+
     const contents = messages.map(m => ({
       role: m.role === 'assistant' ? 'model' as const : 'user' as const,
       parts: [{ text: m.content }],
     }))
 
-    const stream = await model.generateContentStream({ contents })
+    const result = await model.generateContentStream({ contents })
 
     let fullText = ''
-    for await (const chunk of stream) {
-      const text = chunk.text ?? ''
+    for await (const chunk of result.stream) {
+      const text = chunk.text()
       fullText += text
       yield { type: 'text', content: text }
     }
@@ -71,7 +76,8 @@ export class GoogleProvider implements AIChatProvider {
   async validate() {
     try {
       const model = this.client.getGenerativeModel({ model: this.config.modelId })
-      await model.generateContent({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }] })
+      const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }] })
+      result.response.text()
       return { valid: true }
     } catch (e: any) {
       return { valid: false, error: e.message }
