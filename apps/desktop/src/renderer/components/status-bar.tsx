@@ -15,12 +15,12 @@ const modes: Array<{ id: ViewMode; label: string; icon: React.ReactNode }> = [
 
 export function StatusBar({ viewMode, onViewModeChange, onOpenSettings }: StatusBarProps) {
   return (
-    <div className="flex items-center justify-between h-7 px-3 bg-zinc-900 border-t border-nf-border text-xs text-zinc-500">
+    <div className="flex items-center justify-between h-7 px-3 bg-nf-surface border-t border-nf-border text-xs text-nf-muted-light">
       <div className="flex items-center gap-3">
         <span>第 1 卷 · 第 1 章</span>
-        <span className="text-zinc-700">|</span>
+        <span className="opacity-30">|</span>
         <span>0 字</span>
-        <span className="text-zinc-700">|</span>
+        <span className="opacity-30">|</span>
         <span>管线: 空闲</span>
       </div>
 
@@ -31,8 +31,8 @@ export function StatusBar({ viewMode, onViewModeChange, onOpenSettings }: Status
             onClick={() => onViewModeChange(mode.id)}
             className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
               viewMode === mode.id
-                ? 'bg-blue-500/20 text-blue-400'
-                : 'hover:bg-white/5 text-zinc-500 hover:text-zinc-400'
+                ? 'bg-[#f2f9ff] text-[#097fe8]'
+                : 'hover:bg-[rgba(0,0,0,0.04)] text-nf-muted-light hover:text-nf-muted'
             }`}
             title={mode.label + '模式'}
           >
@@ -40,11 +40,11 @@ export function StatusBar({ viewMode, onViewModeChange, onOpenSettings }: Status
             <span>{mode.label}</span>
           </button>
         ))}
-        <span className="text-zinc-700 mx-1">|</span>
+        <span className="opacity-30 mx-1">|</span>
         {onOpenSettings && (
           <button
             onClick={onOpenSettings}
-            className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-white/5 text-zinc-500 hover:text-zinc-400 transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-[rgba(0,0,0,0.04)] text-nf-muted-light hover:text-nf-muted transition-colors"
             title="设置"
           >
             <Settings size={12} />

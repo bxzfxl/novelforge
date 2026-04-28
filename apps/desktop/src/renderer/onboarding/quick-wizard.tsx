@@ -35,19 +35,19 @@ export function QuickWizard({ onComplete, onBack }: QuickWizardProps) {
   return (
     <div className="h-screen flex flex-col bg-nf-bg">
       {/* Progress bar */}
-      <div className="px-8 py-4 border-b border-nf-border">
+      <div className="px-8 py-4 border-b border-nf-border bg-white">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           {STEPS.map((label, i) => (
             <div key={i} className="flex items-center gap-2 flex-1">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                i < step ? 'bg-green-500/20 text-green-400' :
-                i === step ? 'bg-blue-500/20 text-blue-400' :
-                'bg-zinc-800 text-zinc-600'
+                i < step ? 'bg-[#f0fdf4] text-green-600' :
+                i === step ? 'bg-[#f2f9ff] text-[#0075de]' :
+                'bg-[rgba(0,0,0,0.05)] text-nf-muted-light'
               }`}>
                 {i < step ? <Check size={12} /> : i + 1}
               </div>
-              <span className={`text-xs ${i <= step ? 'text-zinc-300' : 'text-zinc-600'}`}>{label}</span>
-              {i < STEPS.length - 1 && <div className="flex-1 h-px bg-zinc-800 mx-2" />}
+              <span className={`text-xs ${i <= step ? 'text-nf-text font-medium' : 'text-nf-muted-light'}`}>{label}</span>
+              {i < STEPS.length - 1 && <div className="flex-1 h-px bg-[rgba(0,0,0,0.08)] mx-2" />}
             </div>
           ))}
         </div>
@@ -65,7 +65,7 @@ export function QuickWizard({ onComplete, onBack }: QuickWizardProps) {
       </div>
 
       {/* Navigation */}
-      <div className="px-8 py-4 border-t border-nf-border flex justify-between">
+      <div className="px-8 py-4 border-t border-nf-border bg-white flex justify-between">
         <Button variant="ghost" onClick={prev}>
           <ChevronLeft size={14} className="mr-1" /> {step === 0 ? '返回' : '上一步'}
         </Button>
@@ -80,7 +80,7 @@ export function QuickWizard({ onComplete, onBack }: QuickWizardProps) {
 function ConfirmStep({ data }: { data: Record<string, any> }) {
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-zinc-200">确认信息</h2>
+      <h2 className="text-xl font-semibold text-nf-text">确认信息</h2>
       <div className="space-y-3">
         {data.title && <InfoRow label="书名" value={data.title} />}
         {data.author && <InfoRow label="作者" value={data.author} />}
@@ -88,16 +88,16 @@ function ConfirmStep({ data }: { data: Record<string, any> }) {
         {data.protagonistName && <InfoRow label="主角" value={data.protagonistName} />}
         {data.synopsis && <InfoRow label="简介" value={data.synopsis} />}
       </div>
-      <p className="text-xs text-zinc-500 mt-4">点击"进入工作室"完成初始化。所有设置可后续在设置页面修改。</p>
+      <p className="text-xs text-nf-muted-light mt-4">点击"进入工作室"完成初始化。所有设置可后续在设置页面修改。</p>
     </div>
   )
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start gap-4 p-3 bg-zinc-900 border border-zinc-800 rounded-lg">
-      <span className="text-xs text-zinc-500 w-16 flex-shrink-0 pt-0.5">{label}</span>
-      <span className="text-sm text-zinc-300">{value}</span>
+    <div className="flex items-start gap-4 p-3 bg-nf-surface border border-nf-border rounded-lg">
+      <span className="text-xs text-nf-muted w-16 flex-shrink-0 pt-0.5">{label}</span>
+      <span className="text-sm text-nf-text">{value}</span>
     </div>
   )
 }

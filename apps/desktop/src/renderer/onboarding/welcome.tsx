@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Sparkles, BookOpen, Zap, Layers } from 'lucide-react'
+import { BookOpen, Zap, Layers } from 'lucide-react'
 import { QuickWizard } from './quick-wizard'
 import { AdvancedWizard } from './advanced-wizard'
 
@@ -17,38 +16,47 @@ export function WelcomePage({ onEnterStudio }: WelcomePageProps) {
   return (
     <div className="h-screen flex items-center justify-center bg-nf-bg">
       <div className="text-center max-w-2xl px-8">
-        <div className="mb-8">
-          <BookOpen size={48} className="mx-auto text-blue-400 mb-4" />
-          <h1 className="text-3xl font-bold text-zinc-100 mb-2">NovelForge</h1>
-          <p className="text-zinc-500">AI 驱动的小说工程化写作系统</p>
+        <div className="mb-10">
+          <div className="w-14 h-14 rounded-2xl bg-[#f2f9ff] flex items-center justify-center mx-auto mb-5">
+            <BookOpen size={28} className="text-[#0075de]" />
+          </div>
+          <h1 className="text-3xl font-bold text-nf-text tracking-tight mb-2">NovelForge</h1>
+          <p className="text-nf-muted text-base">AI 驱动的小说工程化写作系统</p>
         </div>
 
-        <p className="text-zinc-400 mb-10">选择初始化方式开始你的第一部小说</p>
+        <p className="text-nf-muted mb-8 text-sm">选择初始化方式，开始你的第一部小说</p>
 
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => setMode('quick')}
-            className="group p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-blue-500/50 transition-all text-left"
+            className="group p-6 bg-white border border-[rgba(0,0,0,0.1)] rounded-xl hover:border-[#0075de]/40 hover:shadow-[rgba(0,0,0,0.04)_0px_4px_18px,rgba(0,0,0,0.02)_0px_2px_8px] transition-all text-left"
           >
-            <Zap size={24} className="text-amber-400 mb-3" />
-            <h3 className="text-lg font-semibold text-zinc-200 mb-1">快速初始化</h3>
-            <p className="text-sm text-zinc-500">5 步 · ~5 分钟</p>
-            <p className="text-xs text-zinc-600 mt-2">基本信息 + AI 模型 + 主角设定 + 世界观预览 → 开始写作</p>
+            <div className="w-9 h-9 rounded-lg bg-[#fff9f0] flex items-center justify-center mb-4">
+              <Zap size={18} className="text-[#dd5b00]" />
+            </div>
+            <h3 className="text-base font-semibold text-nf-text mb-1">快速初始化</h3>
+            <p className="text-sm text-nf-muted">5 步 · 约 5 分钟</p>
+            <p className="text-xs text-nf-muted-light mt-2 leading-relaxed">基本信息 + AI 模型 + 主角设定 + 世界观 → 开始写作</p>
           </button>
 
           <button
             onClick={() => setMode('advanced')}
-            className="group p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-blue-500/50 transition-all text-left"
+            className="group p-6 bg-white border border-[rgba(0,0,0,0.1)] rounded-xl hover:border-[#0075de]/40 hover:shadow-[rgba(0,0,0,0.04)_0px_4px_18px,rgba(0,0,0,0.02)_0px_2px_8px] transition-all text-left"
           >
-            <Layers size={24} className="text-blue-400 mb-3" />
-            <h3 className="text-lg font-semibold text-zinc-200 mb-1">高级初始化</h3>
-            <p className="text-sm text-zinc-500">7 类 · 15-30 分钟</p>
-            <p className="text-xs text-zinc-600 mt-2">完整世界观 + 配角 + 大纲 + 风格规范，打造专业级设定</p>
+            <div className="w-9 h-9 rounded-lg bg-[#f2f9ff] flex items-center justify-center mb-4">
+              <Layers size={18} className="text-[#0075de]" />
+            </div>
+            <h3 className="text-base font-semibold text-nf-text mb-1">高级初始化</h3>
+            <p className="text-sm text-nf-muted">7 类 · 15–30 分钟</p>
+            <p className="text-xs text-nf-muted-light mt-2 leading-relaxed">完整世界观 + 配角 + 大纲 + 风格规范，打造专业级设定</p>
           </button>
         </div>
 
-        <p className="mt-8 text-xs text-zinc-700">
-          已有项目？<button onClick={onEnterStudio} className="text-blue-400 hover:underline ml-1">直接进入工作室</button>
+        <p className="mt-8 text-xs text-nf-muted-light">
+          已有项目？
+          <button onClick={onEnterStudio} className="text-[#0075de] hover:underline ml-1 underline-offset-2">
+            直接进入工作室
+          </button>
         </p>
       </div>
     </div>

@@ -59,7 +59,7 @@ export function StudioLayout({ onOpenSettings }: StudioLayoutProps) {
 
         {/* Left Resizer */}
         <div
-          className="w-1 cursor-col-resize bg-nf-border hover:bg-blue-500/50 transition-colors flex-shrink-0"
+          className="w-1 cursor-col-resize bg-transparent hover:bg-[#0075de]/20 transition-colors flex-shrink-0"
           onMouseDown={handleLeftResize}
         />
 
@@ -70,7 +70,7 @@ export function StudioLayout({ onOpenSettings }: StudioLayoutProps) {
 
         {/* Right Resizer */}
         <div
-          className="w-1 cursor-col-resize bg-nf-border hover:bg-blue-500/50 transition-colors flex-shrink-0"
+          className="w-1 cursor-col-resize bg-transparent hover:bg-[#0075de]/20 transition-colors flex-shrink-0"
           onMouseDown={handleRightResize}
         />
 

@@ -31,50 +31,58 @@ export function ExportDialog({ open, onClose }: ExportDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-zinc-200">导出项目</DialogTitle>
+          <DialogTitle>导出项目</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 py-2">
           <div>
-            <label className="text-xs text-zinc-400 mb-2 block">导出格式</label>
+            <label className="text-xs text-nf-muted mb-2 block font-medium">导出格式</label>
             <div className="grid grid-cols-2 gap-2">
               {FORMATS.map(f => (
                 <button
                   key={f.id}
                   onClick={() => setFormat(f.id)}
-                  className={`p-3 rounded-lg border text-left transition-colors ${
+                  className={`p-3 rounded-xl border text-left transition-all ${
                     format === f.id
-                      ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
-                      : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700'
+                      ? 'border-[#0075de]/40 bg-[#f2f9ff] shadow-[0_0_0_1px_rgba(0,117,222,0.2)]'
+                      : 'border-nf-border bg-white hover:border-[rgba(0,0,0,0.2)] hover:bg-nf-surface'
                   }`}
                 >
-                  <div className="text-sm font-medium">{f.label}</div>
-                  <div className="text-xs text-zinc-600 mt-0.5">{f.desc}</div>
+                  <div className={`text-sm font-semibold ${format === f.id ? 'text-[#0075de]' : 'text-nf-text'}`}>{f.label}</div>
+                  <div className="text-xs text-nf-muted-light mt-0.5 leading-relaxed">{f.desc}</div>
                 </button>
               ))}
             </div>
           </div>
 
           {format === 'epub' && (
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
-                <input type="checkbox" checked={includeCover} onChange={e => setIncludeCover(e.target.checked)}
-                  className="rounded border-zinc-700 bg-zinc-800" />
-                包含封面
-              </label>
-              <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
-                <input type="checkbox" checked={includeToc} onChange={e => setIncludeToc(e.target.checked)}
-                  className="rounded border-zinc-700 bg-zinc-800" />
-                包含目录
-              </label>
+            <div className="space-y-2.5">
+              {[
+                { checked: includeCover, onChange: setIncludeCover, label: '包含封面' },
+                { checked: includeToc, onChange: setIncludeToc, label: '包含目录' },
+              ].map(({ checked, onChange, label }) => (
+                <label key={label} className="flex items-center gap-2.5 text-sm text-nf-muted cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={e => onChange(e.target.checked)}
+                    className="rounded border-[rgba(0,0,0,0.2)] accent-[#0075de]"
+                  />
+                  {label}
+                </label>
+              ))}
             </div>
           )}
 
-          <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
-            <input type="checkbox" checked={watermark} onChange={e => setWatermark(e.target.checked)}
-              className="rounded border-zinc-700 bg-zinc-800" />
+          <label className="flex items-center gap-2.5 text-sm text-nf-muted cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={watermark}
+              onChange={e => setWatermark(e.target.checked)}
+              className="rounded border-[rgba(0,0,0,0.2)] accent-[#0075de]"
+            />
             添加 NovelForge 水印
           </label>
         </div>

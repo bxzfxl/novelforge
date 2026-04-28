@@ -36,41 +36,41 @@ export function CheckpointReview() {
   const rejected = items.filter(i => i.status === 'rejected').length
 
   return (
-    <div className="h-full flex flex-col bg-zinc-950">
-      <div className="px-4 py-3 border-b border-nf-border">
-        <h2 className="text-sm font-semibold text-zinc-300 mb-1">检查点审阅</h2>
+    <div className="h-full flex flex-col bg-nf-bg">
+      <div className="px-4 py-3 border-b border-nf-border bg-white">
+        <h2 className="text-sm font-semibold text-nf-text mb-1">检查点审阅</h2>
         <div className="flex gap-3 text-xs">
-          <span className="text-green-400">{approved} 通过</span>
-          {rejected > 0 && <span className="text-red-400">{rejected} 驳回</span>}
-          <span className="text-zinc-600">{items.length - approved - rejected} 待审</span>
+          <span className="text-green-600 font-medium">{approved} 通过</span>
+          {rejected > 0 && <span className="text-red-500 font-medium">{rejected} 驳回</span>}
+          <span className="text-nf-muted-light">{items.length - approved - rejected} 待审</span>
         </div>
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-2">
         {items.map(item => (
           <div key={item.id}
-            className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-              item.status === 'approved' ? 'bg-green-500/5 border-green-500/20' :
-              item.status === 'rejected' ? 'bg-red-500/5 border-red-500/20' :
-              'bg-zinc-900 border-zinc-800'
+            className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+              item.status === 'approved' ? 'bg-green-50 border-green-100' :
+              item.status === 'rejected' ? 'bg-red-50 border-red-100' :
+              'bg-white border-nf-border'
             }`}
           >
-            {item.status === 'approved' && <Check size={14} className="text-green-400 flex-shrink-0" />}
-            {item.status === 'rejected' && <X size={14} className="text-red-400 flex-shrink-0" />}
-            {item.status === 'pending' && <AlertTriangle size={14} className="text-zinc-600 flex-shrink-0" />}
+            {item.status === 'approved' && <Check size={14} className="text-green-600 flex-shrink-0" />}
+            {item.status === 'rejected' && <X size={14} className="text-red-500 flex-shrink-0" />}
+            {item.status === 'pending' && <AlertTriangle size={14} className="text-nf-muted-light flex-shrink-0" />}
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-[10px] flex-shrink-0">{item.category}</Badge>
-                <span className="text-sm text-zinc-300 truncate">{item.description}</span>
+                <span className="text-sm text-nf-text truncate">{item.description}</span>
               </div>
-              {item.note && <div className="text-xs text-red-400 mt-1">驳回理由: {item.note}</div>}
+              {item.note && <div className="text-xs text-red-500 mt-1">驳回理由: {item.note}</div>}
             </div>
 
             {item.status === 'pending' && (
               <div className="flex gap-1 flex-shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => approve(item.id)} title="通过">
-                  <Check size={14} className="text-green-500" />
+                  <Check size={14} className="text-green-600" />
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => reject(item.id)} title="驳回">
                   <X size={14} className="text-red-500" />
@@ -82,7 +82,7 @@ export function CheckpointReview() {
       </div>
 
       {items.every(i => i.status !== 'pending') && (
-        <div className="p-4 border-t border-nf-border">
+        <div className="p-4 border-t border-nf-border bg-nf-surface">
           <Button className="w-full" size="sm">
             提交审阅结果 → 进入下一章
           </Button>

@@ -10,7 +10,9 @@ interface AiModelsStepProps {
   isAdvanced?: boolean
 }
 
-export function AiModelsStep({ data, onChange, isAdvanced }: AiModelsStepProps) {
+const ta = "w-full bg-white border border-[#dddddd] rounded p-3 text-sm text-nf-text resize-none outline-none focus:ring-2 focus:ring-[#097fe8] placeholder-[#a39e98]"
+
+export function AiModelsStep({ data, onChange }: AiModelsStepProps) {
   const models = data.models || []
   const [showForm, setShowForm] = useState(false)
   const [provider, setProvider] = useState('anthropic')
@@ -29,17 +31,17 @@ export function AiModelsStep({ data, onChange, isAdvanced }: AiModelsStepProps) 
 
   return (
     <div className="space-y-5">
-      <h2 className="text-xl font-semibold text-zinc-200">AI 模型配置</h2>
-      <p className="text-sm text-zinc-500">至少配置一个模型。可跳过，后续在设置中配置。</p>
+      <h2 className="text-xl font-semibold text-nf-text">AI 模型配置</h2>
+      <p className="text-sm text-nf-muted">至少配置一个模型。可跳过，后续在设置中配置。</p>
 
       {models.map((m: any, i: number) => (
-        <div key={i} className="flex items-center gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-lg">
+        <div key={i} className="flex items-center gap-3 p-3 bg-white border border-nf-border rounded-xl">
           <div className="flex-1">
-            <div className="text-sm text-zinc-300">{m.displayName}</div>
-            <div className="text-xs text-zinc-500">{m.provider} · {m.modelId}</div>
+            <div className="text-sm font-medium text-nf-text">{m.displayName}</div>
+            <div className="text-xs text-nf-muted-light">{m.provider} · {m.modelId}</div>
           </div>
           <Button variant="ghost" size="icon" onClick={() => onChange('models', models.filter((_: any, j: number) => j !== i))}>
-            <X size={14} className="text-zinc-500" />
+            <X size={14} className="text-nf-muted-light" />
           </Button>
         </div>
       ))}
@@ -49,24 +51,19 @@ export function AiModelsStep({ data, onChange, isAdvanced }: AiModelsStepProps) 
           <Plus size={14} className="mr-1" /> 添加模型
         </Button>
       ) : (
-        <div className="space-y-3 p-4 bg-zinc-900 border border-zinc-800 rounded-lg">
+        <div className="space-y-3 p-4 bg-nf-surface border border-nf-border rounded-xl">
           <Select value={provider} onValueChange={setProvider}>
-            <SelectTrigger className="bg-zinc-950 border-zinc-700 text-zinc-200">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
               <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
               <SelectItem value="google">Google Gemini</SelectItem>
               <SelectItem value="openai">OpenAI (GPT)</SelectItem>
               <SelectItem value="openai-compatible">OpenAI-Compatible</SelectItem>
             </SelectContent>
           </Select>
-          <Input value={displayName} onChange={e => setDisplayName(e.target.value)}
-            placeholder="显示名称（如：Claude Opus）" className="bg-zinc-950 border-zinc-700 text-zinc-200" />
-          <Input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)}
-            placeholder="API Key" className="bg-zinc-950 border-zinc-700 text-zinc-200" />
-          <Input value={modelId} onChange={e => setModelId(e.target.value)}
-            placeholder="Model ID（如：claude-opus-4-7）" className="bg-zinc-950 border-zinc-700 text-zinc-200" />
+          <Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="显示名称（如：Claude Opus）" />
+          <Input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key" />
+          <Input value={modelId} onChange={e => setModelId(e.target.value)} placeholder="Model ID（如：claude-opus-4-7）" />
           <div className="flex gap-2">
             <Button size="sm" onClick={addModel}>添加</Button>
             <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>取消</Button>
@@ -75,9 +72,9 @@ export function AiModelsStep({ data, onChange, isAdvanced }: AiModelsStepProps) 
       )}
 
       {models.length === 0 && (
-        <Button variant="link" onClick={() => {}} className="text-xs text-zinc-600">
+        <button className="text-xs text-nf-muted-light hover:text-nf-muted underline underline-offset-2">
           跳过，稍后配置
-        </Button>
+        </button>
       )}
     </div>
   )

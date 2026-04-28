@@ -1,12 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-nf-bg: #09090b;
-  --color-nf-surface: #18181b;
-  --color-nf-border: #27272a;
-  --color-nf-text: #fafafa;
-  --color-nf-muted: #a1a1aa;
-  --color-nf-accent: #a78bfa;
+  --color-nf-bg: #ffffff;
+  --color-nf-surface: #f6f5f4;
+  --color-nf-border: rgba(0,0,0,0.1);
+  --color-nf-text: rgba(0,0,0,0.95);
+  --color-nf-muted: #615d59;
+  --color-nf-muted-light: #a39e98;
+  --color-nf-accent: #0075de;
+  --color-nf-accent-hover: #005bab;
+  --color-nf-badge-bg: #f2f9ff;
+  --color-nf-badge-text: #097fe8;
+  --color-nf-dark: #31302e;
 }
 
 * {
@@ -17,14 +22,15 @@
 
 html, body, #root {
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   background: var(--color-nf-bg);
   color: var(--color-nf-text);
 }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-nf-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
 /* 打字光标动画 */
 @keyframes blink-cursor {
@@ -35,12 +41,12 @@ html, body, #root {
 .typing-cursor::after {
   content: '▊';
   animation: blink-cursor 0.8s step-end infinite;
-  color: theme('colors.amber.400');
+  color: var(--color-nf-accent);
 }
 
 /* 骨架屏加载 */
 .skeleton {
-  @apply animate-pulse rounded-md bg-zinc-800;
+  @apply animate-pulse rounded-md bg-[#ebe9e7];
 }
 
 /* Toast 通知滑入 */
