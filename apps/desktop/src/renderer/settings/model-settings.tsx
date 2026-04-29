@@ -101,7 +101,7 @@ export function ModelSettingsPage({ onBack }: ModelSettingsPageProps) {
                       <span className="ml-1 text-xs">测试</span>
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(model.id)}>
-                      <Trash2 size={14} className="text-nf-muted-light hover:text-red-500" />
+                      <Trash2 size={14} className="text-nf-muted-light hover:text-[var(--color-nf-red)]" />
                     </Button>
                   </div>
                 ))}

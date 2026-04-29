@@ -46,11 +46,11 @@ export function ExportDialog({ open, onClose }: ExportDialogProps) {
                   onClick={() => setFormat(f.id)}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     format === f.id
-                      ? 'border-[#0075de]/40 bg-[#f2f9ff] shadow-[0_0_0_1px_rgba(0,117,222,0.2)]'
+                      ? 'border-[var(--color-nf-accent)]/40 bg-[var(--color-nf-badge-bg)] shadow-[0_0_0_1px_rgba(0,117,222,0.2)]'
                       : 'border-nf-border bg-white hover:border-[rgba(0,0,0,0.2)] hover:bg-nf-surface'
                   }`}
                 >
-                  <div className={`text-sm font-semibold ${format === f.id ? 'text-[#0075de]' : 'text-nf-text'}`}>{f.label}</div>
+                  <div className={`text-sm font-semibold ${format === f.id ? 'text-[var(--color-nf-accent)]' : 'text-nf-text'}`}>{f.label}</div>
                   <div className="text-xs text-nf-muted-light mt-0.5 leading-relaxed">{f.desc}</div>
                 </button>
               ))}
@@ -68,7 +68,7 @@ export function ExportDialog({ open, onClose }: ExportDialogProps) {
                     type="checkbox"
                     checked={checked}
                     onChange={e => onChange(e.target.checked)}
-                    className="rounded border-[rgba(0,0,0,0.2)] accent-[#0075de]"
+                    className="rounded border-[rgba(0,0,0,0.2)] accent-[var(--color-nf-accent)]"
                   />
                   {label}
                 </label>
@@ -81,7 +81,7 @@ export function ExportDialog({ open, onClose }: ExportDialogProps) {
               type="checkbox"
               checked={watermark}
               onChange={e => setWatermark(e.target.checked)}
-              className="rounded border-[rgba(0,0,0,0.2)] accent-[#0075de]"
+              className="rounded border-[rgba(0,0,0,0.2)] accent-[var(--color-nf-accent)]"
             />
             添加 NovelForge 水印
           </label>

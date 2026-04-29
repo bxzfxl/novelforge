@@ -1,60 +1,121 @@
 @import "tailwindcss";
 
 @theme {
-  --color-nf-bg: #ffffff;
-  --color-nf-surface: #f6f5f4;
-  --color-nf-border: rgba(0,0,0,0.1);
-  --color-nf-text: rgba(0,0,0,0.95);
-  --color-nf-muted: #615d59;
-  --color-nf-muted-light: #a39e98;
-  --color-nf-accent: #0075de;
+  /* Notion 桌面端真实色彩系统 */
+  --color-nf-bg:       #ffffff;
+  --color-nf-sidebar:  #f7f6f5;
+  --color-nf-surface:  #f7f6f5;
+  --color-nf-hover:    rgba(55,53,47,0.04);
+  --color-nf-active:   rgba(55,53,47,0.08);
+  --color-nf-border:   rgba(55,53,47,0.09);
+  --color-nf-divider:  rgba(55,53,47,0.06);
+
+  /* 暖近黑文字层级（Notion 不用纯黑） */
+  --color-nf-text:         rgb(55,53,47);
+  --color-nf-text-2:       rgba(55,53,47,0.65);
+  --color-nf-text-3:       rgba(55,53,47,0.4);
+  --color-nf-text-4:       rgba(55,53,47,0.28);
+
+  /* 语义化文字别名 */
+  --color-nf-muted:        rgba(55,53,47,0.55);
+  --color-nf-muted-light:  rgba(55,53,47,0.35);
+
+  /* 输入控件 */
+  --color-nf-input:    rgba(55,53,47,0.05);
+  --color-nf-input-border: rgba(55,53,47,0.12);
+
+  /* Accent */
+  --color-nf-accent:       #0075de;
   --color-nf-accent-hover: #005bab;
-  --color-nf-badge-bg: #f2f9ff;
+  --color-nf-accent-light: rgba(0,117,222,0.08);
+  --color-nf-accent-text:  #0075de;
+
+  /* 语义色 */
+  --color-nf-green:  #0f7b6c;
+  --color-nf-red:    #e03e3e;
+  --color-nf-orange: #d9730d;
+
+  /* 语义色 alpha（供 bg-[]/border-[] 透明度使用） */
+  --color-nf-green-50:  rgba(15,123,108,0.06);
+  --color-nf-green-100: rgba(15,123,108,0.12);
+  --color-nf-red-50:    rgba(224,62,62,0.06);
+  --color-nf-red-100:   rgba(224,62,62,0.12);
+
+  /* Focus & Badge（DESIGN.md 规范） */
+  --color-nf-focus:      #097fe8;
+  --color-nf-badge-bg:   #f2f9ff;
   --color-nf-badge-text: #097fe8;
-  --color-nf-dark: #31302e;
+
+  /* 多层阴影（Notion 4 层 + 5 层） */
+  --shadow-card: rgba(0,0,0,0.04) 0px 4px 18px, rgba(0,0,0,0.027) 0px 2.025px 7.84688px, rgba(0,0,0,0.02) 0px 0.8px 2.925px, rgba(0,0,0,0.01) 0px 0.175px 1.04062px;
+  --shadow-deep: rgba(0,0,0,0.01) 0px 1px 3px, rgba(0,0,0,0.02) 0px 3px 7px, rgba(0,0,0,0.02) 0px 7px 15px, rgba(0,0,0,0.04) 0px 14px 28px, rgba(0,0,0,0.05) 0px 23px 52px;
+
+  /* 圆角层级 */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-pill: 9999px;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body, #root {
   height: 100%;
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
   background: var(--color-nf-bg);
   color: var(--color-nf-text);
+  -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 7px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+::-webkit-scrollbar-thumb { background: rgba(55,53,47,0.14); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(55,53,47,0.22); }
 
-/* 打字光标动画 */
 @keyframes blink-cursor {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  50%       { opacity: 0; }
 }
-
 .typing-cursor::after {
-  content: '▊';
-  animation: blink-cursor 0.8s step-end infinite;
+  content: '|';
+  animation: blink-cursor 1s step-end infinite;
   color: var(--color-nf-accent);
+  margin-left: 1px;
 }
 
-/* 骨架屏加载 */
 .skeleton {
-  @apply animate-pulse rounded-md bg-[#ebe9e7];
+  @apply animate-pulse rounded bg-[rgba(55,53,47,0.06)];
 }
 
-/* Toast 通知滑入 */
+/* Notion 风格 textarea 工具类 */
+.nf-textarea {
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(55,53,47,0.12);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgb(55,53,47);
+  resize: none;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.nf-textarea::placeholder {
+  color: rgba(55,53,47,0.4);
+}
+.nf-textarea:focus {
+  border-color: #0075de;
+  box-shadow: 0 0 0 2px rgba(0,117,222,0.15);
+}
+
+/* Notion 链接 hover 下划线 */
+a:hover { text-decoration: underline; }
+
 @keyframes slide-in-right {
   from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(0);    opacity: 1; }
 }
-
-.toast-enter {
-  animation: slide-in-right 0.3s ease-out;
-}
+.toast-enter { animation: slide-in-right 0.25s ease-out; }

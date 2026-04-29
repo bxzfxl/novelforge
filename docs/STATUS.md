@@ -1,6 +1,6 @@
 # NovelForge 项目状态快照
 
-> **最后更新**：2026-04-27（浏览器 UI 测试后更新）
+> **最后更新**：2026-04-29（Notion 暖白主题全量细化）
 > 本文件描述项目当前实现状态。路线图见 [`ROADMAP.md`](./ROADMAP.md)。
 
 ## 整体状态
@@ -10,6 +10,8 @@
 旧 Web 架构代码已迁移至 `_legacy/` 目录隔离。
 
 > **2026-04-27 浏览器 UI 测试**：通过 Vite dev server + Chrome 自动化对全部 8 个测试项逐项验证，发现并修复 5 个运行时 Bug（详见下方"缺陷修复记录"）。
+
+> **2026-04-29 Notion 暖白主题全量细化**：基于 `docs/DESIGN.md` 设计规范，对全部渲染进程组件进行 Notion 风格深度对齐。修复 3 个未适配组件（DropdownMenu/Tooltip/Skeleton）、统一 textarea 样式系统（`.nf-textarea`）、消除全部硬编码色值（30+ 处 → 0）、构建 Navigator 导航面板、补全 ChapterInfo/AiStream 子组件、扩展 globals.css 设计令牌（阴影/圆角/语义色 alpha）。最终扫描 10 个维度零遗留。
 
 ## 完成度汇总
 
@@ -30,6 +32,7 @@
 | UI — 状态管理 | 100% | 4 个 Zustand stores |
 | 键盘快捷键 | 100% | 14 个快捷键（Cmd+S/J/B/I/N/O/,/W 等）；已修复大小写匹配 Bug |
 | 动画过渡 | 100% | 面板过渡/页面切换/打字光标/Skeleton/Toast |
+| Notion 设计系统 | 100% | globals.css 设计令牌 + 全组件 CSS 变量统一 + 零硬编码色值 |
 | 单元测试 | 40% | 37 条通过；Engine/Store/AI/Provider 核心路径覆盖 |
 | E2E 测试 | 5% | 骨架就绪，待 Electron 运行环境 |
 | 打包配置 | 100% | electron-builder.yml — macOS/Windows/Linux |
@@ -44,9 +47,9 @@
 |-----------|------|--------|
 | App 路由 | `renderer/App.tsx` | ✅ 4 页路由（welcome/studio/settings-models/settings-general） |
 | Studio 布局 | `renderer/layouts/studio-layout.tsx` | ✅ 四面板 + 可拖拽分隔线 |
-| 导航面板 | `renderer/panels/navigator/` | ✅ 树形导航 + 4 分类 |
+| 导航面板 | `renderer/panels/navigator/` | ✅ 项目 Logo + 搜索 + 卷/章树形导航 + 状态标签 |
 | 编辑器面板 | `renderer/panels/editor/` | ✅ 写作/指挥/审阅三模式 + 工具栏 |
-| 查看器面板 | `renderer/panels/inspector/` | ✅ 上下文感知 + 章节卡片 |
+| 查看器面板 | `renderer/panels/inspector/` | ✅ ChapterInfo（字数进度/场景/角色标签）+ AiStream（角色/状态/token）+ ReviewInfo |
 | 指令栏 | `renderer/panels/command-bar/` | ✅ Ctrl+J + 7 种 AI 指令 + 模糊搜索 |
 | 欢迎页 | `renderer/onboarding/welcome.tsx` | ✅ 快速/高级双入口 |
 | 快速向导 | `renderer/onboarding/quick-wizard.tsx` | ✅ 5 步（基本信息→AI→主角→世界观→大纲） |

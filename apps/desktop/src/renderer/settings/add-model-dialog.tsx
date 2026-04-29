@@ -100,8 +100,8 @@ export function AddModelDialog({ onSave, onClose }: AddModelDialogProps) {
           {testResult && (
             <div className={`text-xs p-2.5 rounded-lg border ${
               testResult.includes('成功')
-                ? 'bg-green-50 text-green-700 border-green-100'
-                : 'bg-red-50 text-red-600 border-red-100'
+                ? 'bg-[var(--color-nf-green-50)] text-[var(--color-nf-green)] border-[var(--color-nf-green-100)]'
+                : 'bg-[var(--color-nf-red-50)] text-[var(--color-nf-red)] border-[var(--color-nf-red-100)]'
             }`}>
               {testResult}
             </div>

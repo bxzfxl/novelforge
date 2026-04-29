@@ -10,7 +10,7 @@ interface AiModelsStepProps {
   isAdvanced?: boolean
 }
 
-const ta = "w-full bg-white border border-[#dddddd] rounded p-3 text-sm text-nf-text resize-none outline-none focus:ring-2 focus:ring-[#097fe8] placeholder-[#a39e98]"
+const ta = "nf-textarea"
 
 export function AiModelsStep({ data, onChange }: AiModelsStepProps) {
   const models = data.models || []

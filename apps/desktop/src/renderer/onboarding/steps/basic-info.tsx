@@ -57,7 +57,7 @@ export function BasicInfoStep({ data, onChange, isAdvanced }: BasicInfoStepProps
           <div>
             <label className="text-xs text-nf-muted mb-1.5 block font-medium">简介</label>
             <textarea
-              className="w-full h-24 bg-white border border-[#dddddd] rounded p-3 text-sm text-nf-text resize-none outline-none focus:ring-2 focus:ring-[#097fe8] placeholder-[#a39e98]"
+              className="nf-textarea h-24"
               placeholder="简要介绍故事背景和主线..."
               value={data.synopsis || ''}
               onChange={e => onChange('synopsis', e.target.value)}
@@ -70,7 +70,7 @@ export function BasicInfoStep({ data, onChange, isAdvanced }: BasicInfoStepProps
         <div>
           <label className="text-xs text-nf-muted mb-1.5 block font-medium">简介（可选）</label>
           <textarea
-            className="w-full h-20 bg-white border border-[#dddddd] rounded p-3 text-sm text-nf-text resize-none outline-none focus:ring-2 focus:ring-[#097fe8] placeholder-[#a39e98]"
+            className="nf-textarea h-20"
             placeholder="简要介绍故事..."
             value={data.synopsis || ''}
             onChange={e => onChange('synopsis', e.target.value)}

@@ -1,6 +1,6 @@
 # NovelForge 路线图
 
-> **最后更新**：2026-04-27
+> **最后更新**：2026-04-29
 > 当前状态详见 [`STATUS.md`](./STATUS.md)。
 
 ---
@@ -24,6 +24,7 @@
 - 管线监控 + 检查点审阅
 - Markdown + YAML 章节存储
 - 键盘快捷键 + 动画过渡
+- Notion 暖白设计系统（DESIGN.md 规范 + 全组件 CSS 变量统一）
 - electron-builder 打包配置（macOS/Windows/Linux）
 - 37 条单元测试
 

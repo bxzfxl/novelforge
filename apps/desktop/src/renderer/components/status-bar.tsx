@@ -31,7 +31,7 @@ export function StatusBar({ viewMode, onViewModeChange, onOpenSettings }: Status
             onClick={() => onViewModeChange(mode.id)}
             className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
               viewMode === mode.id
-                ? 'bg-[#f2f9ff] text-[#097fe8]'
+                ? 'bg-[var(--color-nf-badge-bg)] text-[var(--color-nf-badge-text)]'
                 : 'hover:bg-[rgba(0,0,0,0.04)] text-nf-muted-light hover:text-nf-muted'
             }`}
             title={mode.label + '模式'}

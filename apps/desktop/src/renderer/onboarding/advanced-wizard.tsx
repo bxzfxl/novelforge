@@ -33,8 +33,8 @@ export function AdvancedWizard({ onComplete, onBack }: AdvancedWizardProps) {
           {CATEGORIES.map((label, i) => (
             <div key={i} className="flex items-center gap-1 flex-shrink-0">
               <div className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                i < step ? 'bg-green-50 text-green-700' :
-                i === step ? 'bg-[#f2f9ff] text-[#0075de]' :
+                i < step ? 'bg-[var(--color-nf-green-50)] text-[var(--color-nf-green)]' :
+                i === step ? 'bg-[var(--color-nf-badge-bg)] text-[var(--color-nf-accent)]' :
                 'text-nf-muted-light'
               }`}>
                 {i < step ? <Check size={10} className="inline mr-1" /> : null}
@@ -72,7 +72,7 @@ function SupportingCharsStep({ data, onChange }: { data: Record<string, any>; on
       <h2 className="text-xl font-semibold text-nf-text">配角设定</h2>
       <p className="text-sm text-nf-muted">暂设主要配角，后续可在角色管理中详细编辑。</p>
       <textarea
-        className="w-full h-32 bg-white border border-[#dddddd] rounded p-4 text-sm text-nf-text resize-none outline-none focus:ring-2 focus:ring-[#097fe8] placeholder-[#a39e98]"
+        className="nf-textarea h-32"
         placeholder="描述主要配角（姓名、角色定位、与主角关系）..."
         value={data.supportingChars || ''}
         onChange={e => onChange('supportingChars', e.target.value)}

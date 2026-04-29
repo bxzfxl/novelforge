@@ -73,7 +73,7 @@ export function EditorPanel({ viewMode, onCommandOpen }: EditorPanelProps) {
             value={content}
             onChange={e => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 w-full bg-transparent text-nf-text p-8 font-serif text-[17px] leading-[1.8] resize-none outline-none placeholder-nf-muted-light"
+            className="flex-1 w-full bg-transparent text-nf-text p-8 text-[17px] leading-[1.8] resize-none outline-none placeholder-nf-muted-light"
             placeholder="开始写作... (Ctrl+J 唤起 AI 指令)"
             spellCheck={false}
           />
@@ -82,7 +82,7 @@ export function EditorPanel({ viewMode, onCommandOpen }: EditorPanelProps) {
           <>
             <div className="w-px bg-nf-border" />
             <div className="w-1/2 p-8 overflow-auto">
-              <div className="prose text-sm leading-[1.8] whitespace-pre-wrap font-serif text-nf-text max-w-none">
+              <div className="prose text-sm leading-[1.8] whitespace-pre-wrap text-nf-text max-w-none">
                 {content}
               </div>
             </div>

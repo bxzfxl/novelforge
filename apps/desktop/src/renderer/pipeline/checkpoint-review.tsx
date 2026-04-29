@@ -40,8 +40,8 @@ export function CheckpointReview() {
       <div className="px-4 py-3 border-b border-nf-border bg-white">
         <h2 className="text-sm font-semibold text-nf-text mb-1">检查点审阅</h2>
         <div className="flex gap-3 text-xs">
-          <span className="text-green-600 font-medium">{approved} 通过</span>
-          {rejected > 0 && <span className="text-red-500 font-medium">{rejected} 驳回</span>}
+          <span className="text-[var(--color-nf-green)] font-medium">{approved} 通过</span>
+          {rejected > 0 && <span className="text-[var(--color-nf-red)] font-medium">{rejected} 驳回</span>}
           <span className="text-nf-muted-light">{items.length - approved - rejected} 待审</span>
         </div>
       </div>
@@ -50,13 +50,13 @@ export function CheckpointReview() {
         {items.map(item => (
           <div key={item.id}
             className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-              item.status === 'approved' ? 'bg-green-50 border-green-100' :
-              item.status === 'rejected' ? 'bg-red-50 border-red-100' :
+              item.status === 'approved' ? 'bg-[var(--color-nf-green-50)] border-[var(--color-nf-green-100)]' :
+              item.status === 'rejected' ? 'bg-[var(--color-nf-red-50)] border-[var(--color-nf-red-100)]' :
               'bg-white border-nf-border'
             }`}
           >
-            {item.status === 'approved' && <Check size={14} className="text-green-600 flex-shrink-0" />}
-            {item.status === 'rejected' && <X size={14} className="text-red-500 flex-shrink-0" />}
+            {item.status === 'approved' && <Check size={14} className="text-[var(--color-nf-green)] flex-shrink-0" />}
+            {item.status === 'rejected' && <X size={14} className="text-[var(--color-nf-red)] flex-shrink-0" />}
             {item.status === 'pending' && <AlertTriangle size={14} className="text-nf-muted-light flex-shrink-0" />}
 
             <div className="flex-1 min-w-0">
@@ -64,16 +64,16 @@ export function CheckpointReview() {
                 <Badge variant="outline" className="text-[10px] flex-shrink-0">{item.category}</Badge>
                 <span className="text-sm text-nf-text truncate">{item.description}</span>
               </div>
-              {item.note && <div className="text-xs text-red-500 mt-1">驳回理由: {item.note}</div>}
+              {item.note && <div className="text-xs text-[var(--color-nf-red)] mt-1">驳回理由: {item.note}</div>}
             </div>
 
             {item.status === 'pending' && (
               <div className="flex gap-1 flex-shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => approve(item.id)} title="通过">
-                  <Check size={14} className="text-green-600" />
+                  <Check size={14} className="text-[var(--color-nf-green)]" />
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => reject(item.id)} title="驳回">
-                  <X size={14} className="text-red-500" />
+                  <X size={14} className="text-[var(--color-nf-red)]" />
                 </Button>
               </div>
             )}

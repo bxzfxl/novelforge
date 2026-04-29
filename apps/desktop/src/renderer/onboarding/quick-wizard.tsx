@@ -40,8 +40,8 @@ export function QuickWizard({ onComplete, onBack }: QuickWizardProps) {
           {STEPS.map((label, i) => (
             <div key={i} className="flex items-center gap-2 flex-1">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                i < step ? 'bg-[#f0fdf4] text-green-600' :
-                i === step ? 'bg-[#f2f9ff] text-[#0075de]' :
+                i < step ? 'bg-[var(--color-nf-green-50)] text-[var(--color-nf-green)]' :
+                i === step ? 'bg-[var(--color-nf-badge-bg)] text-[var(--color-nf-accent)]' :
                 'bg-[rgba(0,0,0,0.05)] text-nf-muted-light'
               }`}>
                 {i < step ? <Check size={12} /> : i + 1}

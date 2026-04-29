@@ -21,9 +21,9 @@ const STEP_LABELS: Record<string, string> = {
 
 function StepIcon({ status }: { status: PipelineStep['status'] }) {
   switch (status) {
-    case 'completed': return <Check size={14} className="text-green-600" />
-    case 'running': return <Loader2 size={14} className="text-[#0075de] animate-spin" />
-    case 'failed': return <AlertCircle size={14} className="text-red-500" />
+    case 'completed': return <Check size={14} className="text-[var(--color-nf-green)]" />
+    case 'running': return <Loader2 size={14} className="text-[var(--color-nf-accent)] animate-spin" />
+    case 'failed': return <AlertCircle size={14} className="text-[var(--color-nf-red)]" />
     default: return <Clock size={14} className="text-nf-muted-light" />
   }
 }
@@ -41,7 +41,7 @@ export function PipelineMonitor() {
         <p className="text-sm text-nf-muted-light mb-6">配置项目后启动 AI 写作流程</p>
         <div className="flex gap-2">
           <input
-            className="px-3 py-1.5 bg-white border border-nf-border rounded text-sm text-nf-text outline-none focus:ring-2 focus:ring-[#097fe8]"
+            className="px-3 py-1.5 bg-white border border-[rgba(55,53,47,0.12)] rounded text-sm text-nf-text outline-none focus:border-[var(--color-nf-accent)] focus:ring-2 focus:ring-[var(--color-nf-accent)]/15 transition-colors"
             placeholder="项目名称"
             value={projectName}
             onChange={e => setProjectName(e.target.value)}
@@ -81,7 +81,7 @@ export function PipelineMonitor() {
         {/* Progress bar */}
         <div className="w-full h-1.5 bg-[rgba(0,0,0,0.06)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#0075de] rounded-full transition-all duration-500"
+            className="h-full bg-[var(--color-nf-accent)] rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -112,8 +112,8 @@ export function PipelineMonitor() {
             pipeline.steps.map(step => (
               <div key={step.id}
                 className={`flex items-center gap-3 p-2 rounded-lg text-sm transition-colors ${
-                  step.status === 'running' ? 'bg-[#f2f9ff]' :
-                  step.status === 'failed' ? 'bg-red-50' : ''
+                  step.status === 'running' ? 'bg-[var(--color-nf-badge-bg)]' :
+                  step.status === 'failed' ? 'bg-[var(--color-nf-red-50)]' : ''
                 }`}
               >
                 <StepIcon status={step.status} />
