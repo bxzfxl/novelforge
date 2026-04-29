@@ -5,7 +5,7 @@
 
 ## 整体状态
 
-**Phase 1 免费版 MVP — 已交付**。Electron 桌面应用骨架完整，37 个 git 提交，37 条全过测试，全量 TypeScript 零错误。
+**Phase 1 免费版 MVP — 已交付**。Electron 桌面应用骨架完整，115 个 git 提交，37 条全过测试，全量 TypeScript 零错误。
 
 旧 Web 架构代码已迁移至 `_legacy/` 目录隔离。
 

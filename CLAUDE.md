@@ -108,7 +108,8 @@ novelforge/
 
 ## 关键设计文档
 
-- `docs/superpowers/specs/2026-04-27-novelforge-desktop-rewrite-design.md` — 桌面应用设计规范
+- `docs/DESIGN.md` — Notion 暖白设计系统规范（色彩/字体/组件/间距/阴影/圆角）
+- `docs/superpowers/specs/2026-04-27-novelforge-desktop-rewrite-design.md` — 桌面应用架构设计规范
 - `docs/superpowers/plans/2026-04-27-novelforge-desktop-rewrite.md` — 实施计划（7 Group，37 提交）
 - `docs/STATUS.md` — 当前实现状态
 - `docs/ROADMAP.md` — 路线图
@@ -151,6 +152,7 @@ pnpm -C apps/desktop build:desktop      # 构建 + electron-builder 打包
 - pnpm monorepo
 - TypeScript strict mode
 - UI 组件使用 shadcn/ui + Radix primitives
+- **设计系统**：遵循 `docs/DESIGN.md` Notion 暖白规范，所有色值通过 `globals.css` CSS 变量引用（`--color-nf-*`、`--shadow-*`），禁止硬编码十六进制色值
 - 状态管理使用 Zustand 5.x
 - IPC 使用 contextBridge + ipcRenderer.invoke
 - API Key 加密使用 AES-256-GCM（本地密钥）
